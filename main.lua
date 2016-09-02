@@ -122,7 +122,6 @@ local Vector = require 'vendor.hump.vector'
 
 
 local game = {
-    scale = 1,
     sprites = {},
     actors = {},
 }
@@ -140,18 +139,16 @@ function SpriteFrame:init(spritesheet, region)
     self.region = region
     self.quad = love.graphics.newQuad(
         self.region.l, self.region.t, self.region.w, self.region.h,
-        spritesheet:getWidth(), spritesheet:getHeight())
+        spritesheet:getDimensions())
 end
 
 function SpriteFrame:draw_at(point, dt, hflip)
-    -- TODO take scale into account?  and factor in love's pixel scale while you're at it
     local x, y = point:unpack()
-    local sx, sy = game.scale, game.scale
     if hflip then
         x = x + self.region.w
         sx = sx * -1
     end
-    love.graphics.draw(self.spritesheet, self.quad, x, y, 0, sx, sy)
+    love.graphics.draw(self.spritesheet, self.quad, x, y)
 end
 
 
@@ -182,7 +179,7 @@ function love.update(dt)
     end
 end
 
-function love.draw(dt)
+function love.draw()
     _mapdraw(Vector(0, 0))
 
     for _, actor in ipairs(game.actors) do
@@ -401,7 +398,7 @@ function tmp_draw_dialogue()
 
 
     love.graphics.setColor(0, 0, 0, 128)
-    love.graphics.rectangle('fill', 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    love.graphics.rectangle('fill', 0, 0, love.graphics.getDimensions())
     love.graphics.setColor(255, 255, 255)
 
     local boxheight = 160
@@ -409,11 +406,11 @@ function tmp_draw_dialogue()
     local boxtop = love.graphics.getHeight() - boxheight
 
     local boxrepeatleft, boxrepeatright = 192, 224
-    local boxquadl = love.graphics.newQuad(0, 0, boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getWidth(), dialogueboximg:getHeight())
+    local boxquadl = love.graphics.newQuad(0, 0, boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
     love.graphics.draw(dialogueboximg, boxquadl, 0, boxtop, 0, 2)
-    local boxquadm = love.graphics.newQuad(boxrepeatleft, 0, boxrepeatright - boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getWidth(), dialogueboximg:getHeight())
+    local boxquadm = love.graphics.newQuad(boxrepeatleft, 0, boxrepeatright - boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
     love.graphics.draw(dialogueboximg, boxquadm, boxrepeatleft * 2, boxtop, 0, math.floor(love.graphics.getWidth() / (boxrepeatright - boxrepeatleft)) + 1, 2)
-    local boxquadr = love.graphics.newQuad(boxrepeatright, 0, dialogueboximg:getWidth() - boxrepeatright, dialogueboximg:getHeight(), dialogueboximg:getWidth(), dialogueboximg:getHeight())
+    local boxquadr = love.graphics.newQuad(boxrepeatright, 0, dialogueboximg:getWidth() - boxrepeatright, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
     love.graphics.draw(dialogueboximg, boxquadr, love.graphics.getWidth() - (dialogueboximg:getWidth() - boxrepeatright) * 2, boxtop, 0, 2)
 
 
