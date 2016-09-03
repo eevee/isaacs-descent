@@ -1,5 +1,13 @@
 # Vendored libraries
 
+## anim8
+
+Commit 539cc26 from Feb 10, 2016
+
+Vendored on Sep 3, 2016
+
+Original source: https://github.com/kikito/anim8
+
 ## dkjson
 
 Version 2.5

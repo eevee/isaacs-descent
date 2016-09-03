@@ -22,7 +22,7 @@ local PlayerActor = Class{
     shape = HC_new_rectangle(0, 0, 32, 64),
 
     -- Visuals (should maybe be wrapped in another object?)
-    sprite = 'isaac_stand',
+    sprite_name = 'isaac',
     facing_left = false,
 
     -- Passive physics parameters
@@ -51,6 +51,10 @@ local terminal_velocity = 7/8 * PICO8V
 function PlayerActor:init(position)
     self.pos = position
     self.velocity = Vector(0, 0)
+
+    -- TODO arrgh, this global.  sometimes i just need access to the game.
+    -- should this be done on enter, maybe?
+    self.sprite = game.sprites[self.sprite_name]:instantiate()
 
     local center = Vector(self.shape:center())
     self.shape:moveTo((self.pos + center):unpack())
@@ -109,6 +113,9 @@ function PlayerActor:update(dt)
     -- Velocity-based state tracking
     -- TODO _prevx?
     self.on_ground = false
+    -- Note that this has to be done /before/ collision -- if the player tries
+    -- to walk left and immediately bumps into something and is stopped, the
+    -- sprite should still face left
     if self.velocity.x ~= 0 then
         self.facing_left = self.velocity.x < 0
     end
@@ -173,10 +180,26 @@ function PlayerActor:update(dt)
     end
 
     self.pos = self.pos + movement
+
+    -- Update pose depending on movement
+    local pose
+    if self.velocity.x == 0 then
+        pose = 'stand'
+    else
+        pose = 'walk'
+    end
+    if self.facing_left then
+        pose = pose .. '/left'
+    else
+        pose = pose .. '/right'
+    end
+    -- TODO hmm, seems a slight shame to call update() when the new pose might clobber that anyway; maybe combine these methods?
+    self.sprite:update(dt)
+    self.sprite:set_pose(pose)
 end
 
 function PlayerActor:draw()
-    game.sprites[self.sprite]:draw_at(self.pos, 0, self.facing_left)
+    self.sprite:draw_at(self.pos)
 end
 
 

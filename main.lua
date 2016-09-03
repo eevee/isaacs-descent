@@ -1,5 +1,6 @@
 local utf8 = require 'utf8'
 
+local anim8 = require 'vendor.anim8'
 local Class = require 'vendor.hump.class'
 local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
@@ -17,26 +18,75 @@ local TILE_SIZE = 32
 
 
 --------------------------------------------------------------------------------
--- Sprite definitions
+-- Sprite
+-- Contains a number of 'poses', each of which is an anim8 animation.  Can
+-- switch between them and draw with a simplified API.
 
-local SpriteFrame = Class{}
+local Sprite = Class{}
+local SpriteInstance  -- defined below
 
-function SpriteFrame:init(spritesheet, region)
-    self.spritesheet = spritesheet
-    self.region = region
-    self.quad = love.graphics.newQuad(
-        self.region.l, self.region.t, self.region.w, self.region.h,
-        spritesheet:getDimensions())
+-- TODO this restricts a single sprite to only pull frames from a single image,
+-- which isn't unreasonable, but also seems like a needless limitation
+-- TODO seems like this could be wired in with Tiled?  apparently Tiled can
+-- even define animations, ha!
+function Sprite:init(image, tilewidth, tileheight, x, y, margin)
+    self.image = image
+    self.grid = anim8.newGrid(
+        tilewidth, tileheight,
+        image:getWidth(), image:getHeight(),
+        x, y, margin)
+    self.poses = {}
+    self.default_pose = nil
 end
 
-function SpriteFrame:draw_at(point, dt, hflip)
-    local x, y = point:unpack()
-    local sx, sy = 1, 1
-    if hflip then
-        x = x + self.region.w
-        sx = sx * -1
+function Sprite:add_pose(name, grid_args, durations, endfunc)
+    -- TODO this is pretty hokey, but is a start at support for non-symmetrical
+    -- characters.  maybe add an arg to set_pose rather than forcing the caller
+    -- to do this same name mangling though?
+    local rightname = name .. '/right'
+    local leftname = name .. '/left'
+    assert(not self.poses[rightname], ("Pose %s already exists"):format(rightname))
+    local anim = anim8.newAnimation(
+        self.grid(unpack(grid_args)), durations, endfunc)
+    self.poses[rightname] = anim
+    self.poses[leftname] = anim:clone():flipH()
+    if not self.default_pose then
+        self.default_pose = rightname
     end
-    love.graphics.draw(self.spritesheet, self.quad, x, y, 0, sx, sy)
+end
+
+-- A Sprite is a definition; call this to get an instance with state, which can
+-- draw itself and remember its current pose
+function Sprite:instantiate()
+    return SpriteInstance(self)
+end
+
+SpriteInstance = Class{}
+
+function SpriteInstance:init(sprite)
+    self.sprite = sprite
+    self.pose = nil
+    self.anim = nil
+    self:set_pose(sprite.default_pose)
+end
+
+function SpriteInstance:set_pose(pose)
+    if pose == self.pose then
+        return
+    end
+    assert(self.sprite.poses[pose], ("No such pose %s"):format(pose))
+    self.pose = pose
+    self.anim = self.sprite.poses[pose]:clone()
+end
+
+function SpriteInstance:update(dt)
+    self.anim:update(dt)
+end
+
+function SpriteInstance:draw_at(point)
+    -- TODO hm, how do i auto-batch?  shame there's nothing for doing that
+    -- built in?  seems an obvious thing
+    self.anim:draw(self.sprite.image, point:unpack())
 end
 
 
@@ -44,11 +94,17 @@ end
 
 function love.load(arg)
     love.graphics.setDefaultFilter('nearest', 'nearest', 1)
-    -- TODO list all this declaratively and actually populate it in this function?
+
+    -- Load all the graphics upfront
+    -- TODO i wouldn't mind having this defined in some json
+    local character_sheet = love.graphics.newImage('assets/images/player.png')
+    -- TODO istm i'll end up repeating this bit a lot
+    game.sprites.isaac = Sprite(character_sheet, TILE_SIZE, TILE_SIZE * 2, 32, 32)
+    game.sprites.isaac:add_pose('stand', {1, 1}, 0.05, 'pauseAtEnd')
+    game.sprites.isaac:add_pose('walk', {'2-9', 1}, 0.1)
+
+    -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
-    game.sprites.isaac_stand = SpriteFrame(
-        -- TODO need a better way to chop up spritesheet; probably exists already
-        p8_spritesheet, { l = 32, t = 0, w = 32, h = 64})
 
     map = TiledMap("assets/maps/all-pico8.tiled.json", function() return p8_spritesheet end)
     worldscene = WorldScene(map)
