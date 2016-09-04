@@ -123,9 +123,18 @@ function PlayerActor:update(dt)
     local movement = self.velocity * dt
 
     -- TODO round to a tile?  to a pixel?  to half a pixel?
-
+    ----------------------------------------------------------------------------
     -- Collision time!
+
+    -- First things first: restrict movement to within the current map
     -- TODO ARGH, worldscene is a global!
+    do
+        local l, t, r, b = self.shape:bbox()
+        local ml, mt, mr, mb = 0, 0, worldscene.map.width, worldscene.map.height
+        movement.x = util.clamp(movement.x, ml - l, mr - r)
+        movement.y = util.clamp(movement.y, mt - t, mb - b)
+    end
+
     -- Skip collision against anything we're already overlapping
     local precollisions = worldscene.collider:collisions(self.shape)
 

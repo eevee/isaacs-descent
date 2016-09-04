@@ -13,11 +13,22 @@ local function sign(n)
     end
 end
 
+local function clamp(n, min, max)
+    if n < min then
+        return min
+    elseif n > max then
+        return max
+    else
+        return n
+    end
+end
+
 local function divmod(n, b)
     return math.floor(n / b), math.mod(n, b)
 end
 
 return {
     sign = sign,
+    clamp = clamp,
     divmod = divmod,
 }
