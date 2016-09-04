@@ -125,10 +125,13 @@ function PlayerActor:update(dt)
     -- TODO round to a tile?  to a pixel?  to half a pixel?
 
     -- Collision time!
+    -- TODO ARGH, worldscene is a global!
+    -- Skip collision against anything we're already overlapping
+    local precollisions = worldscene.collider:collisions(self.shape)
+
     local movement0 = movement:clone()
     self.shape:move(movement:unpack())
 
-    -- TODO !!!
     local collisions = worldscene.collider:collisions(self.shape)
     -- TODO this could use some comments?
     -- TODO maybe rename 'delta' to, like, pushback
@@ -140,13 +143,16 @@ function PlayerActor:update(dt)
     local shape_distances = {}
     local center = Vector(self.shape:center())
     for shape, delta in pairs(collisions) do
-        delta = Vector(unpack(delta))
-        shape_deltas[shape] = delta
-        shape_delta_lens[shape] = delta:len2()
-        local shape_center = Vector(shape:center())
-        shape_centers[shape] = shape_center
-        shape_distances[shape] = center:dist2(shape_center)
-        table.insert(shapes, shape)
+        local pre = precollisions[shape]
+        if not pre or (pre.x == 0 and pre.y == 0) then
+            delta = Vector(unpack(delta))
+            shape_deltas[shape] = delta
+            shape_delta_lens[shape] = delta:len2()
+            local shape_center = Vector(shape:center())
+            shape_centers[shape] = shape_center
+            shape_distances[shape] = center:dist2(shape_center)
+            table.insert(shapes, shape)
+        end
     end
     table.sort(shapes, function(a, b)
         if shape_distances[a] == shape_distances[b] then
@@ -164,8 +170,29 @@ function PlayerActor:update(dt)
         local delta = shape_deltas[shape]
         local still_collides, dx, dy = self.shape:collidesWith(shape)
         if still_collides then
-            movement.x = movement.x + dx
-            movement.y = movement.y + dy
+            -- Don't allow the rejection to push us in a direction we weren't
+            -- originally moving
+            if movement.x == 0 then
+                -- Not moving at all (any more); ignore
+                dx = 0
+            elseif math.abs(dx) > math.abs(movement.x) then
+                -- This move would push us past zero, so simply cut it to zero
+                dx = -movement.x
+                movement.x = 0
+            else
+                movement.x = movement.x + dx
+            end
+
+            -- Same stuff but for y
+            if movement.y == 0 then
+                dy = 0
+            elseif math.abs(dy) > math.abs(movement.y) then
+                dy = -movement.y
+                movement.y = 0
+            else
+                movement.y = movement.y + dy
+            end
+
             self.shape:move(dx, dy)
         end
     end
