@@ -6,8 +6,9 @@ local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 
 local PlayerActor = require 'isaacsdescent.actors.player'
-local TiledMap = require 'isaacsdescent.tiledmap'
+local ResourceManager = require 'isaacsdescent.resources'
 local WorldScene = require 'isaacsdescent.scenes.world'
+local TiledMap = require 'isaacsdescent.tiledmap'
 
 
 game = {
@@ -106,7 +107,11 @@ function love.load(arg)
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
 
-    map = TiledMap("assets/maps/all-pico8.tiled.json", function() return p8_spritesheet end)
+    local resource_manager = ResourceManager()
+    resource_manager:register_default_loaders()
+    resource_manager.locked = false  -- TODO make an api for this lol
+    game.resource_manager = resource_manager
+    map = TiledMap("data/maps/pico8-02.tmx.json", resource_manager)
     worldscene = WorldScene(map)
     worldscene:add_actor(PlayerActor(Vector(1, 6) * TILE_SIZE))
 

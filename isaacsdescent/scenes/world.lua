@@ -13,7 +13,7 @@ function WorldScene:init(map)
     self.map = map
     self.actors = {}
 
-    self.collider = HC.new(4 * map.tiled.tilewidth)
+    self.collider = HC.new(4 * map.tilewidth)
     map:add_to_collider(self.collider)
 end
 
