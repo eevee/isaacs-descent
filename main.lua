@@ -111,7 +111,8 @@ function love.load(arg)
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
-    map = TiledMap("data/maps/pico8-02.tmx.json", resource_manager)
+    --map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
+    map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene(map)
     worldscene:add_actor(PlayerActor(Vector(1, 6) * TILE_SIZE))
 
@@ -122,6 +123,11 @@ function love.load(arg)
     local fontscale = 2
     m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
     m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
+end
+
+function love.draw()
+    print(love.timer.getFPS())
+    love.graphics.print(tostring(love.timer.getFPS( )), 10, 10)
 end
 
 --------------------------------------------------------------------------------

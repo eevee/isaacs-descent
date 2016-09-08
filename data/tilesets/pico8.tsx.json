@@ -7,6 +7,20 @@
  "spacing":0,
  "tilecount":256,
  "tileheight":32,
+ "tileproperties":
+    {
+     "42":
+        {
+         "actor":"magic-platform"
+        }
+    },
+ "tilepropertytypes":
+    {
+     "42":
+        {
+         "actor":"string"
+        }
+    },
  "tiles":
     {
      "32":
@@ -133,6 +147,50 @@
                      "type":"",
                      "visible":true,
                      "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "89":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":0,
+                     "id":1,
+                     "name":"",
+                     "polygon":[
+                            {
+                             "x":0,
+                             "y":0
+                            }, 
+                            {
+                             "x":32,
+                             "y":32
+                            }, 
+                            {
+                             "x":0,
+                             "y":32
+                            }, 
+                            {
+                             "x":0,
+                             "y":0
+                            }],
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":0,
                      "x":0,
                      "y":0
                     }],

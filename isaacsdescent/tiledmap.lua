@@ -2,15 +2,12 @@
 Read a map in Tiled's JSON format.
 ]]
 
-local HC_shapes = require 'vendor.HC.shapes'
 local Class = require 'vendor.hump.class'
+local Vector = require 'vendor.hump.vector'
 local json = require 'vendor.dkjson'
 
 local util = require 'isaacsdescent.util'
-
-local function HC_new_rectangle(x, y, w, h)
-    return HC_shapes.newPolygonShape(x,y, x+w,y, x+w,y+h, x,y+h)
-end
+local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 
 
 -- I hate silent errors
@@ -82,9 +79,13 @@ function TiledTileset:init(path, data, resource_manager)
 
         -- While we're in here: JSON necessitates that the keys for per-tile
         -- data are strings, but they're intended as numbers, so fix them up
-        if data.tiles then
-            data.tiles[relid] = data.tiles["" .. relid]
-            data.tiles["" .. relid] = nil
+        -- TODO surely this could be done as its own loop on the outside
+        for _, key in ipairs{'tiles', 'tileproperties', 'tilepropertytypes'} do
+            local tbl = data[key]
+            if tbl then
+                tbl[relid] = tbl["" .. relid]
+                tbl["" .. relid] = nil
+            end
         end
     end
 end
@@ -103,10 +104,26 @@ function TiledTileset:get_collision(tileid)
     -- than one, doesn't check shape, etc
     -- TODO and this might crash at any point
     local coll = tiledata.objectgroup.objects[1]
-    if coll then
-        return HC_new_rectangle(
-            coll.x, coll.y, coll.width, coll.height)
+    if not coll then
+        return
     end
+
+    if coll.polygon then
+        print("COOL A POLYGON")
+        local points = {}
+        for _, pt in ipairs(coll.polygon) do
+            if _ ~= 1 then
+                table.insert(points, pt.x)
+                table.insert(points, pt.y)
+            end
+        end
+        print(unpack(points))
+        return whammo_shapes.Polygon(unpack(points))
+    end
+
+    print(coll.x, coll.y, coll.width, coll.height)
+    return whammo_shapes.Box(
+        coll.x, coll.y, coll.width, coll.height)
 end
 
 --------------------------------------------------------------------------------
@@ -152,6 +169,39 @@ function TiledMap:init(path, resource_manager)
             }
         end
     end
+
+    -- Detach any automatic actor tiles
+    -- TODO also more explicit actors via object layers probably
+    self.actor_templates = {}
+    for _, layer in pairs(self.raw.layers) do
+        -- TODO this is largely copy/pasted from below
+        local lx = layer.x * self.tilewidth + (layer.offsetx or 0)
+        local ly = layer.y * self.tileheight + (layer.offsety or 0)
+        local width, height = layer.width, layer.height
+        local data = layer.data
+        for t = 0, width * height - 1 do
+            local gid = data[t + 1]
+            local tile = self.tiles[gid]
+            -- TODO lol put this in the tileset jesus
+            -- TODO what about the tilepropertytypes
+            if tile then
+                local proptable = tile.tileset.raw.tileproperties
+                if proptable then
+                    local props = proptable[tile.tilesetid]
+                    if props and props.actor then
+                        local ty, tx = util.divmod(t, width)
+                        table.insert(self.actor_templates, {
+                            name = props.actor,
+                            position = Vector(
+                                lx + tx * self.raw.tilewidth,
+                                ly + ty * self.raw.tileheight),
+                        })
+                        data[t + 1] = 0
+                    end
+                end
+            end
+        end
+    end
 end
 
 function TiledMap:add_to_collider(collider)
@@ -161,7 +211,7 @@ function TiledMap:add_to_collider(collider)
     self.shapes = {}
     for _, layer in pairs(self.raw.layers) do
         local lx = layer.x * self.tilewidth + (layer.offsetx or 0)
-        local ly = layer.y * self.tilewidth + (layer.offsety or 0)
+        local ly = layer.y * self.tileheight + (layer.offsety or 0)
         local width, height = layer.width, layer.height
         local data = layer.data
         for t = 0, width * height - 1 do
@@ -184,7 +234,7 @@ function TiledMap:add_to_collider(collider)
                         ly + ty * self.raw.tileheight)
                     -- TODO this doesn't work -- there are multiple layers!
                     self.shapes[t] = shape
-                    collider:register(shape)
+                    collider:add(shape)
                 end
             end
         end
@@ -212,6 +262,10 @@ function TiledMap:draw(origin)
                     0, 1, 1)
             end
         end
+    end
+
+    for _, shape in pairs(self.shapes) do
+        shape:draw('line')
     end
 end
 
