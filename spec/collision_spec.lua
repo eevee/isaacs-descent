@@ -3,33 +3,6 @@ local Vector = require 'vendor.hump.vector'
 local whammo = require 'isaacsdescent.whammo'
 local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 
-describe("Linear decomposition", function()
-    it("should work", function()
-        local seg1 = whammo_shapes.Segment(5, 0, 5, 10)
-        local seg2 = whammo_shapes.Segment(0, 10, 10, 10)
-        local dv = whammo_shapes.find_segment_intersection(seg1, seg2, Vector(5, 5))
-        assert.are.equal(0, dv)
-    end)
-end)
-
-
-describe("Segment", function()
-    it("should work with the original PICO-8 demo case", function()
-        local seg1 = whammo_shapes.Segment(32, 64, 96, 96)
-        local seg2 = whammo_shapes.Segment(112, 16, 112, 96)
-        local movement = Vector(32, -32)
-        local dv = whammo_shapes.find_segment_intersection(seg1, seg2, movement)
-        assert.are.equal(0.5, dv)
-    end)
-    it("should work when edges press together", function()
-        local seg1 = whammo_shapes.Segment(93, 256, 61, 256)
-        local seg2 = whammo_shapes.Segment(32, 256, 64, 256)
-        local movement = Vector(-28.067511599511, 24.618287730896)
-        local dv = whammo_shapes.find_segment_intersection(seg1, seg2, movement)
-        assert.are.equal(0, dv)
-    end)
-end)
-
 describe("Collision", function()
     it("should handle orthogonal movement", function()
         --[[
@@ -217,16 +190,5 @@ describe("Collision", function()
         local successful, hits = collider:slide(player, move:unpack())
         assert.are.equal(move, successful)
         assert.is.falsy(hits[floor])
-    end)
-
-    it("should be stable on slopes", function()
-        local collider = whammo.Collider(4 * 32)
-        local floor = whammo_shapes.Polygon(224, 352, 256, 352, 256, 384, 224, 384)
-        collider:add(floor)
-
-        local player = whammo_shapes.Polygon(269, 301, 301, 301, 301, 365, 269, 365)
-        local successful, hits = collider:slide(player, 0, 10)
-        assert.are.equal(Vector(4.3068122830999, 0), successful)
-        assert.is.truthy(hits[floor1])
     end)
 end)
