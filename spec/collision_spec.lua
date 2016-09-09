@@ -194,4 +194,39 @@ describe("Collision", function()
         assert.are.equal(Vector(4.3068122830999, 0), successful)
         assert.is.truthy(hits[floor1])
     end)
+
+    it("should allow near misses", function()
+        --[[
+            Actual case seen when playing:
+                    +--------+
+                    | player |
+                    +--------+
+
+            +--------+
+            | floor  |
+            +--------+
+            movement is right and down, such that the player will not actually
+            touch the floor
+        ]]
+        local collider = whammo.Collider(4 * 100)
+        local floor = whammo_shapes.Box(0, 250, 100, 100)
+        collider:add(floor)
+
+        local player = whammo_shapes.Box(0, 0, 100, 100)
+        local move = Vector(150, 150)
+        local successful, hits = collider:slide(player, move:unpack())
+        assert.are.equal(move, successful)
+        assert.is.falsy(hits[floor])
+    end)
+
+    it("should be stable on slopes", function()
+        local collider = whammo.Collider(4 * 32)
+        local floor = whammo_shapes.Polygon(224, 352, 256, 352, 256, 384, 224, 384)
+        collider:add(floor)
+
+        local player = whammo_shapes.Polygon(269, 301, 301, 301, 301, 365, 269, 365)
+        local successful, hits = collider:slide(player, 0, 10)
+        assert.are.equal(Vector(4.3068122830999, 0), successful)
+        assert.is.truthy(hits[floor1])
+    end)
 end)

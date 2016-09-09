@@ -27,6 +27,13 @@ describe("ClockRange", function()
     it("should consider equality to be containment", function()
         assert.is.truthy(ClockRange.contains(down, down, down))
         assert.is.truthy(ClockRange.contains(down * 3, down * 5, down))
+
+        -- TODO not sure if i want {x, x} to mean everything or just x
+        assert.is.falsy(ClockRange.contains(down, down, left))
+        assert.is.falsy(ClockRange.contains(down * 3, down * 5, left))
+
+        --assert.is.falsy(ClockRange.contains(down, down, up))
+        --assert.is.falsy(ClockRange.contains(down * 3, down * 5, up))
     end)
 
     it("should correctly handle crossing zero", function()
@@ -61,6 +68,15 @@ describe("ClockRange", function()
         clock:union(up, down)
         assert.are.same(
             ClockRange(left, down).ranges,
+            clock.ranges)
+    end)
+
+    it("should correctly handle unions 3", function()
+        local clock = ClockRange(left, right)
+
+        clock:union(down_left, up_right)
+        assert.are.same(
+            ClockRange(down_left, right).ranges,
             clock.ranges)
     end)
 

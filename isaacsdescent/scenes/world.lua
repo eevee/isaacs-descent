@@ -13,7 +13,7 @@ function WorldScene:init(map)
     self.map = map
     self.actors = {}
 
-    self.collider = whammo.Collider(4 * map.tilewidth)
+    self.collider = whammo.Collider(map.tilewidth)
     map:add_to_collider(self.collider)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
@@ -26,8 +26,10 @@ end
 -- hump.gamestate hooks
 
 function WorldScene:update(dt)
+    if love.keyboard.isDown('a') then
     for _, actor in ipairs(self.actors) do
         actor:update(dt)
+    end
     end
 end
 
@@ -36,6 +38,14 @@ function WorldScene:draw()
 
     for _, actor in ipairs(self.actors) do
         actor:draw(dt)
+    end
+
+    if debug_hits then
+        love.graphics.setColor(255, 0, 0, 128)
+        for hit in pairs(debug_hits) do
+            hit:draw('fill')
+        end
+        love.graphics.setColor(255, 255, 255)
     end
 end
 

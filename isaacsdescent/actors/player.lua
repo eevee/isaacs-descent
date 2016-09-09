@@ -25,7 +25,9 @@ local PlayerActor = Class{
     min_speed = 1/64 * PICO8V,
     max_speed = 1/4 * PICO8V,
     -- TODO this is kind of hard to convert from pico-8 units to seconds; this is in frames, which i assume are 60 fps
-    friction = math.sqrt(0.625),
+    --friction = math.sqrt(0.625),
+    --friction = 1/16 * PICO8A,
+    friction = 1,
 
     -- Active physics parameters
     xaccel = 0.125 * PICO8A,
@@ -40,7 +42,7 @@ local PlayerActor = Class{
     -- Physics state
     on_ground = false,
 }
-local gravity = 1/16 * PICO8A
+local gravity = Vector(0, 1/16 * PICO8A)
 local terminal_velocity = 7/8 * PICO8V
 
 function PlayerActor:init(position)
@@ -93,13 +95,42 @@ function PlayerActor:update(dt)
     end
 
     -- Passive adjustments
-    local friction = self.friction
-    if not self.on_ground then
-        -- Compute air friction
-        friction = 1 - (1 - friction) / 2
+    -- TODO is there air friction?
+    -- Force of friction: Ff = μFn
+    -- Fn is the magnitude of the normal force, m g cos θ, where θ is the angle
+    -- measured from the horizontal.  We don't actually care about the /force/
+    -- of friction, either; only its acceleration, af.  Substitute in and:
+    --     af m = μ m g cos θ
+    --     af = μ g cos θ
+    -- Conveniently, θ is the same as the angle between the gravitational field
+    -- and the normal vector.  If we normalize the normal (which we can get
+    -- from the slide) and take the dot product with gravity...
+    --     n1 ⋅ G = |n1| |G| cos θ = g cos θ
+    --     ∴ af = μ n1 ⋅ G
+    -- What's μ?  Well, I have no idea.
+    if false and self.last_slide then
+        local slide1 = self.last_slide:normalized()
+        local norm1 = slide1:perpendicular()
+        -- Depending on the direction of the slide, that "normal" might
+        -- actually point either up or down.  We fix the direction in a moment
+        -- by multiplying by the slide, so just take the absolute value here
+        local accel_friction = self.friction * math.abs(norm1 * gravity)
+        print("acceleration of friction", accel_friction)
+        print("vel change of friction", accel_friction * dt * -slide1)
+        print("old velocity", self.velocity)
+        -- Friction is in the direction opposite the direction of sliding
+        -- TODO i feel like this should maybe not apply when walking /up/ a
+        -- slope?  or maybe not when trying to move at all?
+        local newvelocity = self.velocity + accel_friction * dt * -slide1
+        if util.sign(newvelocity.x) ~= util.sign(self.velocity.x) then
+            newvelocity.x = 0
+        end
+        if util.sign(newvelocity.y) ~= util.sign(self.velocity.y) then
+            newvelocity.y = 0
+        end
+        print("new velocity", self.velocity)
+        self.velocity = newvelocity
     end
-    -- TODO i don't like that this friction is independent of time, but it's /exponential/, what can i do about that
-    self.velocity.x = self.velocity.x * friction
     if math.abs(self.velocity.x) > self.max_speed then
         self.velocity.x = util.sign(self.velocity.x) * self.max_speed
     elseif math.abs(self.velocity.x) < self.min_speed then
@@ -107,7 +138,8 @@ function PlayerActor:update(dt)
     end
 
     -- Gravity
-    self.velocity.y = math.min(self.velocity.y + gravity * dt, terminal_velocity)
+    self.velocity = self.velocity + gravity * dt
+    self.velocity.y = math.min(self.velocity.y, terminal_velocity)
 
     -- Velocity-based state tracking
     -- TODO _prevx?
@@ -126,9 +158,9 @@ function PlayerActor:update(dt)
     -- Collision time!
     --print()
     --[[
-    self.pos = Vector(429, 320)
+    self.pos = Vector(282.57071216542, 256.67301583553)
     self.shape:move(self.pos.x - self.shape.x0, self.pos.y - self.shape.y0)
-    movement = Vector(4.9896571306426, 1.8285924341659)
+    movement = Vector(4.5186891533476, 5.1286257491438)
     ]]
 
     -- First things first: restrict movement to within the current map
@@ -246,7 +278,8 @@ function PlayerActor:update(dt)
     movement = movement * tmin
     ]===]
 
-    local movement, hits = worldscene.collider:slide(self.shape, movement:unpack())
+    local movement, hits, last_slide = worldscene.collider:slide(self.shape, movement:unpack())
+    self.last_slide = last_slide
 
     --print("Final movement is", movement:unpack())
     --print("Seem to have hit:")
@@ -267,8 +300,10 @@ function PlayerActor:update(dt)
     -- TODO this sounds nice, but it prevents me from knowing when i've hit
     -- something -- consider a jump that gets me <0.4 pixels from the ceiling,
     -- and i round away the difference.  hmmm.
+    --[[
     local roundedpos = Vector(math.floor(self.pos.x + 0.5), math.floor(self.pos.y + 0.5))
     self.pos = roundedpos
+    ]]
     self.shape:move_to(self.pos:unpack())
 
     -- Update pose depending on movement

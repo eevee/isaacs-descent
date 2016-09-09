@@ -67,6 +67,11 @@ function ClockRange.contains(a, b, v)
     end
 end
 
+-- Returns true if the vector is at the zero angle, along the positive x axis
+function ClockRange.iszero(v)
+    return v.x > 0 and v.y == 0
+end
+
 function ClockRange:init(a, b)
     self.ranges = {}
 
@@ -189,13 +194,18 @@ function ClockRange:_union(other)
     local new_ranges = {}
     local pending
     for range in _interleave_ranges(self.ranges, other.ranges) do
+        -- There are three possible cases: pending contains range, pending
+        -- overlaps range, and pending is independent from range.
+        -- Distinguishing them is slightly tricky because our minimum and
+        -- maximum angle is the same: zero.  If pending = {0, a} and range =
+        -- {b, 0}, then it looks like pending's start and range's end overlap!
+        -- Avoid asking if pending[1] is in range or range[2] is in pending.
         if not pending then
             pending = {unpack(range)}
-        elseif ClockRange.contains(range[1], range[2], pending[2]) or
-            ClockRange.contains(pending[1], pending[2], range[1]) then
-            -- New range overlaps with the pending range; extend the pending
-            -- range if appropriate
-            if ClockRange.contains(self.ZERO, range[2], pending[2]) then
+        elseif ClockRange.contains(pending[1], pending[2], range[1]) then
+            -- They overlap to some extent, but who ends first?
+            if ClockRange.contains(range[1], range[2], pending[2]) then
+                -- New range is wider than the pending range; extend it
                 pending[2] = range[2]
             end
         else
@@ -203,6 +213,10 @@ function ClockRange:_union(other)
             -- the pending range; the new range is now pending
             table.insert(new_ranges, pending)
             pending = {unpack(range)}
+        end
+        if ClockRange.iszero(pending[2]) then
+            -- Once we have a pending slice that touches the end, we're done
+            break
         end
     end
     if pending then

@@ -28,18 +28,25 @@ local PRECISION = 1024 * 1024 * 1024
 function Collider:slide(shape, dx, dy)
     local attempted = Vector(dx, dy)
     local successful = Vector(0, 0)
+    -- TODO this only has hits from the last movement, oops
     local hits = {}  -- set of objects we ultimately bump into
+    local last_slide  -- last direction we slide, for friction
+    print()
+    print()
+    print("MOVEMENT TIME!!", attempted, "bbox:", shape:bbox())
 
     -- TODO i am pretty sure this needs to hit the closest thing first, then
     -- repeat until movement is exhausted or an iteration has no hits
+    debug_hits = {}
+    local stuckcounter = 0
     while true do
         local anyhit = false
         local min_d = 1
         local neighbors = self.blockmap:neighbors(shape, attempted:unpack())
         for neighbor in pairs(neighbors) do
-            local d, clock = shape:slide_towards_2(neighbor, attempted)
+            local d, clock = shape:slide_towards_3(neighbor, attempted)
             if d then
-                --print("*** Hit registered:", d, clock, "via", neighbor:bbox())
+                print("*** Hit registered:", d, clock, "via", neighbor:bbox())
                 anyhit = true
                 if d <= min_d then
                     if d < min_d then
@@ -51,11 +58,22 @@ function Collider:slide(shape, dx, dy)
             end
         end
 
-        --print("---")
-        --print("Finished one round with d =", min_d)
+        print("---")
+        print("Finished one round with d =", min_d)
         if not anyhit then
             --print("Breaking because no hits?")
             break
+        end
+        -- Automatically break if we don't move for three iterations -- not
+        -- moving once is okay because we might slide, but three indicates a
+        -- bad loop somewhere
+        if min_d == 0 then
+            stuckcounter = stuckcounter + 1
+            if stuckcounter >= 3 then
+                break
+            end
+        else
+            stuckcounter = 0
         end
         local this_move = attempted * min_d
         shape:move(this_move:unpack())
@@ -74,12 +92,14 @@ function Collider:slide(shape, dx, dy)
         -- TODO slide must also be within the general direction of the
         -- movement, so that's a good starting point, but is very likely to
         -- create intersections
-        --local moveperp = attempted:perpendicular()
-        --local finalclock = util.ClockRange(-moveperp, moveperp)
+        local moveperp = attempted:perpendicular()
+        local finalclock = util.ClockRange(-moveperp, moveperp)
         local finalclock = util.ClockRange(util.ClockRange.ZERO, util.ClockRange.ZERO)
         for neighbor, clock in pairs(hits) do
+            print("intersecting with", clock)
             finalclock:intersect(clock)
         end
+        print("finalclock:", finalclock)
         -- Finally, find a fucking hand
         local slide, dot
         for vec in pairs(finalclock:extremes()) do
@@ -93,9 +113,29 @@ function Collider:slide(shape, dx, dy)
                 dot = vecdot
             end
         end
+        last_slide = slide
+        print("slide:", slide)
 
-        attempted = attempted - this_move
-        attempted = attempted:projectOn(slide)
+        print("original attempt:   ", attempted)
+        print("step made this loop:", this_move)
+        local remaining = attempted - this_move
+        print("left after movement:", remaining)
+        remaining = remaining:projectOn(slide)
+        print("left after slide:   ", remaining)
+        -- TODO is this equivalent to attempted = attempted - attempted:projectOn(normal)?
+        -- TODO what if the sign's different?
+        if math.abs(remaining.x) > math.abs(attempted.x) then
+            remaining.x = attempted.x
+        end
+        if math.abs(remaining.y) > math.abs(attempted.y) then
+            remaining.y = attempted.y
+        end
+        print("left after trim:    ", remaining)
+        attempted = remaining
+
+        for hit in pairs(hits) do
+            debug_hits[hit] = true
+        end
 
         if attempted.x == 0 and attempted.y == 0 then
             break
@@ -104,7 +144,8 @@ function Collider:slide(shape, dx, dy)
 
     -- Whatever's left over is unopposed
     shape:move(attempted:unpack())
-    return successful + attempted, hits
+    print("final movement:", successful + attempted)
+    return successful + attempted, hits, last_slide
 end
 
 function Collider:slide__old(shape, dx, dy)

@@ -156,9 +156,15 @@ function Polygon:init(...)
         end
     end
     table.insert(self.edges, Segment(coords[#coords - 1], coords[#coords], coords[1], coords[2]))
-    print("Edges:")
+    self:_generate_normals()
+end
+
+function Polygon:_generate_normals()
+    self._normals = {}
     for _, edge in ipairs(self.edges) do
-        print(edge)
+        local normal = edge:normal()
+        -- What a mouthful
+        self._normals[normal] = normal:normalized()
     end
 end
 
@@ -554,124 +560,147 @@ function Polygon:slide_towards_2(other, movement)
     return dv, finalclock
 end
 
-function Polygon:slide_towards(other, dx, dy)
-    -- TODO early return if the moving bbox won't even intersect the other
-    --print("[SLIDE_TOWARDS]", dx, dy, "with other's bbox:", other:bbox())
-    -- Assuming all boxes for now
-    -- TODO don't do that
-    -- One sliding AABB can only collide with another at one of its "forward"
-    -- edges, i.e., one of the edges facing the direction of motion.
-    -- If the slide is orthogonal, there's only one candidate edge; if the
-    -- slide is zero (if, say, we already collided with something else), we
-    -- need to test touch instead, which is really all four edges.
-    -- Note that if the boxes overlap, this code will usually allow the slide.
-    -- TODO is that what we want?  what's the right thing there, actually?
-    local hit = false
-    local d = 1
-    local zero = dx == 0 and dy == 0
-    local nx, ny = 0, 0
-    -- Whether our bbox will overlap AFTER moving
-    local overlapx = self.x1 + dx > other.x0 and self.x0 + dx < other.x1
-    local overlapy = self.y1 + dy > other.y0 and self.y0 + dy < other.y1
+function Polygon:normals()
+    return self._normals
+end
 
-    -- Left
-    if dx < 0 or zero then
-        -- Their x; our starting and ending x
-        --print("- moving left!")
-        local x = other.x1
-        local sx = self.x0
-        local ex = self.x0 + dx
-        if overlapy and ex <= x and x <= sx then
-            --print("  - HIT!!")
-            hit = true
-            local new_d
-            if zero then
-                new_d = 0
-            else
-                new_d = (sx - x) / (sx - ex)
-            end
-            nx = 1
-            if new_d < d then
-                d = new_d
-                ny = 0
-            end
+function Polygon:project_onto_axis(axis)
+    -- TODO maybe use vector-light here
+    local minpt = Vector(self.coords[1], self.coords[2])
+    local maxpt = minpt
+    local min = axis * minpt
+    local max = min
+    for i = 3, #self.coords, 2 do
+        local pt = Vector(self.coords[i], self.coords[i + 1])
+        local dot = axis * pt
+        if dot < min then
+            min = dot
+            minpt = pt
+        elseif dot > max then
+            max = dot
+            maxpt = pt
         end
     end
-    -- Right
-    if dx > 0 or zero then
-        --print("- moving right!")
-        local x = other.x0
-        local sx = self.x1
-        local ex = self.x1 + dx
-        if overlapy and sx <= x and x <= ex then
-            --print("  - HIT!!")
-            hit = true
-            local new_d
-            if zero then
-                new_d = 0
-            else
-                new_d = (sx - x) / (sx - ex)
-            end
-            nx = -1
-            if new_d < d then
-                d = new_d
-                ny = 0
-            end
-        end
-    end
+    return min, max, minpt, maxpt
+end
 
-    -- Up
-    if dy < 0 or zero then
-        -- Their y; our starting and ending y
-        --print("- moving up!")
-        local y = other.y1
-        local sy = self.y0
-        local ey = self.y0 + dy
-        if overlapx and ey <= y and y <= sy then
-            --print("  - HIT!!")
-            hit = true
-            local new_d
-            if zero then
-                new_d = 0
-            else
-                new_d = (sy - y) / (sy - ey)
-            end
-            ny = 1
-            if new_d < d then
-                d = new_d
-                nx = 0
-            end
-        end
+function Polygon:slide_towards_3(other, movement)
+    -- TODO skip entirely if bbox movement renders this impossible
+    -- Use the separating axis theorem.
+    -- 1. Choose a bunch of axes, generally normals of the shapes.
+    -- 2. Project both shapes along each axis.
+    -- 3. If the projects overlap along ANY axis, the shapes overlap.
+    --    Otherwise, they don't.
+    -- This code also does a couple other things.
+    -- b. It uses the direction of movement as an extra axis, in order to find
+    --    the minimum possible movement between the two shapes.
+    -- a. It keeps values around in terms of their original vectors, rather
+    --    than lengths or normalized vectors, to avoid precision loss
+    --    from taking square roots.
+
+    -- Mapping of normal vectors (i.e. projection axes) to their normalized
+    -- versions (needed for comparing the results of the projection)
+    local movenormal = movement:perpendicular()
+    --local axes = {[movement] = movement:normalized()}
+    local axes = {[movenormal] = movenormal:normalized()}
+    for norm, norm1 in pairs(self:normals()) do
+        axes[norm] = norm1
     end
-    -- Down
-    if dy > 0 or zero then
-        local y = other.y0
-        local sy = self.y1
-        local ey = self.y1 + dy
-        --print("- moving down!", sy, y, ey)
-        if overlapx and sy <= y and y <= ey then
-            --print("  - HIT!!")
-            hit = true
-            local new_d
-            if zero then
-                new_d = 0
-            else
-                new_d = (sy - y) / (sy - ey)
+    for norm, norm1 in pairs(other:normals()) do
+        axes[norm] = norm1
+    end
+    --print("...", table.concat(self.coords, " "))
+    --print("...", table.concat(other.coords, " "))
+
+    -- Project both shapes onto each axis and look for the minimum distance
+    local maxdist = -math.huge
+    local maxsep, maxdir
+    -- TODO i would love to get rid of this
+    local clock = util.ClockRange()
+    for fullaxis, axis in pairs(axes) do
+        --print("trying axis:", fullaxis, axis)
+        local min1, max1, minpt1, maxpt1 = self:project_onto_axis(axis)
+        local min2, max2, minpt2, maxpt2 = other:project_onto_axis(axis)
+        local dist, sep
+        if min1 < min2 then
+            -- 1 appears first, so take the distance from 1 to 2
+            dist = min2 - max1
+            sep = minpt2 - maxpt1
+        else
+            -- Other way around
+            dist = min1 - max2
+            -- Note that sep is always the vector from us to them
+            sep = maxpt2 - minpt1
+        end
+        if math.abs(dist) < 1e-8 then
+            dist = 0
+        end
+        if dist >= 0 then
+            -- The movement itself may be a slide, in which case we can stop
+            -- here; we know they'll never collide
+            print("time to check for a slide")
+            local dot = fullaxis * movement
+            print(fullaxis, movement, dot)
+            if min1 < min2 then
+                dot = -dot
             end
-            ny = -1
-            if new_d < d then
-                d = new_d
-                nx = 0
+            print(dot)
+            if dot >= 0 then
+                -- This is a slide
+                return
             end
+            -- If the distance isn't negative, then it's possible to do a slide
+            -- anywhere in the general direction of this axis
+            local perp = fullaxis:perpendicular()
+            if min1 < min2 then
+                perp = -perp
+            end
+            clock:union(-perp, perp)
+        end
+        if dist > maxdist then
+            maxdist = dist
+            maxsep = sep
+            maxdir = fullaxis
+            print("  * NEW MAX DISTANCE:", maxdist, sep, fullaxis)
         end
     end
 
-    return hit, d, nx, ny
+    if maxdist < 0 then
+        -- Shapes are already colliding
+        -- TODO should maybe...  return something more specific here?
+        print("returning because maxdist is", maxdist)
+        return
+    end
+
+    -- TODO there must be a more sensible way to calculate this
+    -- Vector describing the shortest gap
+    local gap = maxsep:projectOn(maxdir)
+    local allowed = movement:projectOn(maxdir)
+    local dv
+    if math.abs(allowed.x) > math.abs(allowed.y) then
+        dv = gap.x / allowed.x
+    else
+        dv = gap.y / allowed.y
+    end
+    if dv > 1 then
+        -- Won't actually hit!
+        return
+    end
+    -- TODO i don't reeeally like this since it seems to suggest we will very
+    -- slowly sink into a diagonal surface
+    if math.abs(dv) < 1e-8 then
+        dv = 0
+    end
+    return dv, clock
 end
 
 -- An AABB, i.e., an unrotated rectangle
+local _XAXIS = Vector(1, 0)
+local _YAXIS = Vector(0, 1)
 local Box = Class{
     __includes = Polygon,
+    -- Handily, an AABB only has two normals: the x and y axes
+    _normals = { [_XAXIS] = _XAXIS, [_YAXIS] = _YAXIS },
 }
 
 function Box:init(x, y, width, height)
@@ -679,6 +708,9 @@ function Box:init(x, y, width, height)
     Polygon.init(self, x, y, x + width, y, x + width, y + height, x, y + height)
     self.width = width
     self.height = height
+end
+
+function Box:_generate_normals()
 end
 
 function Box:move_to(x, y)

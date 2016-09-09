@@ -126,7 +126,6 @@ function love.load(arg)
 end
 
 function love.draw()
-    print(love.timer.getFPS())
     love.graphics.print(tostring(love.timer.getFPS( )), 10, 10)
 end
 
