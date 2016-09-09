@@ -31,8 +31,6 @@ function Collider:slide(shape, dx, dy)
     -- TODO this only has hits from the last movement, oops
     local hits = {}  -- set of objects we ultimately bump into
     local last_slide  -- last direction we slide, for friction
-    print()
-    print()
     print("MOVEMENT TIME!!", attempted, "bbox:", shape:bbox())
 
     -- TODO i am pretty sure this needs to hit the closest thing first, then
@@ -123,6 +121,7 @@ function Collider:slide(shape, dx, dy)
         remaining = remaining:projectOn(slide)
         print("left after slide:   ", remaining)
         -- TODO is this equivalent to attempted = attempted - attempted:projectOn(normal)?
+        --[[
         -- TODO what if the sign's different?
         if math.abs(remaining.x) > math.abs(attempted.x) then
             remaining.x = attempted.x
@@ -130,6 +129,7 @@ function Collider:slide(shape, dx, dy)
         if math.abs(remaining.y) > math.abs(attempted.y) then
             remaining.y = attempted.y
         end
+        ]]
         print("left after trim:    ", remaining)
         attempted = remaining
 

@@ -635,16 +635,14 @@ function Polygon:slide_towards_3(other, movement)
         if math.abs(dist) < 1e-8 then
             dist = 0
         end
+        --print("dist:", dist)
         if dist >= 0 then
             -- The movement itself may be a slide, in which case we can stop
             -- here; we know they'll never collide
-            print("time to check for a slide")
             local dot = fullaxis * movement
-            print(fullaxis, movement, dot)
             if min1 < min2 then
                 dot = -dot
             end
-            print(dot)
             if dot >= 0 then
                 -- This is a slide
                 return
@@ -656,6 +654,7 @@ function Polygon:slide_towards_3(other, movement)
                 perp = -perp
             end
             clock:union(-perp, perp)
+            --print("clock is now", clock)
         end
         if dist > maxdist then
             maxdist = dist
@@ -688,9 +687,6 @@ function Polygon:slide_towards_3(other, movement)
     end
     -- TODO i don't reeeally like this since it seems to suggest we will very
     -- slowly sink into a diagonal surface
-    if math.abs(dv) < 1e-8 then
-        dv = 0
-    end
     return dv, clock
 end
 

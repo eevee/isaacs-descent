@@ -180,7 +180,17 @@ local function _interleave_ranges(ranges1, ranges2)
         elseif n2 >= #ranges2 then
             n1 = n1 + 1
             return ranges1[n1]
-        elseif ClockRange.contains(ClockRange.ZERO, ranges1[n1 + 1][1], ranges2[n2 + 1][1]) then
+        end
+
+        local next1 = ranges1[n1 + 1][1]
+        local next2 = ranges2[n2 + 1][1]
+        if ClockRange.iszero(next1) then
+            n1 = n1 + 1
+            return ranges1[n1]
+        elseif ClockRange.iszero(next2) then
+            n2 = n2 + 1
+            return ranges2[n2]
+        elseif ClockRange.contains(ClockRange.ZERO, next1, next2) then
             n2 = n2 + 1
             return ranges2[n2]
         else

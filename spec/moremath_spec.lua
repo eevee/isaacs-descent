@@ -80,6 +80,15 @@ describe("ClockRange", function()
             clock.ranges)
     end)
 
+    it("should correctly handle unions 4", function()
+        local clock = ClockRange(up_left, down_right)
+        clock:union(left * 32, right)
+
+        assert.are.same(
+            ClockRange(left * 32, down_right).ranges,
+            clock.ranges)
+    end)
+
     it("should correctly handle intersections", function()
         local clock = ClockRange(down_right, left)
 

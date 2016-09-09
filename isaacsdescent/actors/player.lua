@@ -30,7 +30,9 @@ local PlayerActor = Class{
     friction = 1,
 
     -- Active physics parameters
-    xaccel = 0.125 * PICO8A,
+    --xaccel = 0.125 * PICO8A,
+    xaccel = 0.0625 * PICO8A,
+    xdecel = 0.0625 * PICO8A,
     max_jumptime = 4 / 30,
     -- determined experimentally
     -- to make max jump 2 tiles
@@ -66,6 +68,8 @@ function PlayerActor:update(dt)
     if not self.on_ground then
         xmult = self.aircontrol
     end
+    print()
+    print()
 
     -- Explicit movement
     -- TODO should be whichever was pressed last?
@@ -73,6 +77,24 @@ function PlayerActor:update(dt)
         self.velocity.x = self.velocity.x + self.xaccel * xmult * dt
     elseif love.keyboard.isDown('left') then
         self.velocity.x = self.velocity.x - self.xaccel * xmult * dt
+    else
+        -- Decelerate when not holding a key
+        -- TODO this still doesn't /quite/ work with slopes because it doesn't
+        -- counteract gravity
+        if self.last_slide and (self.velocity.x ~= 0 or self.velocity.y ~= 0) then
+            local slide1 = self.last_slide:projectOn(self.velocity):normalized()
+            local dot = slide1 * self.velocity
+            local decel = self.xdecel * dt
+            if dot > 0 then
+                slide1 = -slide1
+            else
+                dot = -dot
+            end
+            if dot < decel then
+                decel = dot
+            end
+            self.velocity = self.velocity + slide1 * decel
+        end
     end
 
     -- Jumping
@@ -95,42 +117,6 @@ function PlayerActor:update(dt)
     end
 
     -- Passive adjustments
-    -- TODO is there air friction?
-    -- Force of friction: Ff = μFn
-    -- Fn is the magnitude of the normal force, m g cos θ, where θ is the angle
-    -- measured from the horizontal.  We don't actually care about the /force/
-    -- of friction, either; only its acceleration, af.  Substitute in and:
-    --     af m = μ m g cos θ
-    --     af = μ g cos θ
-    -- Conveniently, θ is the same as the angle between the gravitational field
-    -- and the normal vector.  If we normalize the normal (which we can get
-    -- from the slide) and take the dot product with gravity...
-    --     n1 ⋅ G = |n1| |G| cos θ = g cos θ
-    --     ∴ af = μ n1 ⋅ G
-    -- What's μ?  Well, I have no idea.
-    if false and self.last_slide then
-        local slide1 = self.last_slide:normalized()
-        local norm1 = slide1:perpendicular()
-        -- Depending on the direction of the slide, that "normal" might
-        -- actually point either up or down.  We fix the direction in a moment
-        -- by multiplying by the slide, so just take the absolute value here
-        local accel_friction = self.friction * math.abs(norm1 * gravity)
-        print("acceleration of friction", accel_friction)
-        print("vel change of friction", accel_friction * dt * -slide1)
-        print("old velocity", self.velocity)
-        -- Friction is in the direction opposite the direction of sliding
-        -- TODO i feel like this should maybe not apply when walking /up/ a
-        -- slope?  or maybe not when trying to move at all?
-        local newvelocity = self.velocity + accel_friction * dt * -slide1
-        if util.sign(newvelocity.x) ~= util.sign(self.velocity.x) then
-            newvelocity.x = 0
-        end
-        if util.sign(newvelocity.y) ~= util.sign(self.velocity.y) then
-            newvelocity.y = 0
-        end
-        print("new velocity", self.velocity)
-        self.velocity = newvelocity
-    end
     if math.abs(self.velocity.x) > self.max_speed then
         self.velocity.x = util.sign(self.velocity.x) * self.max_speed
     elseif math.abs(self.velocity.x) < self.min_speed then
@@ -151,9 +137,18 @@ function PlayerActor:update(dt)
         self.facing_left = self.velocity.x < 0
     end
 
-    local movement = self.velocity * dt
+    -- Calculate the desired movement, always trying to move us such that we
+    -- end up on the edge of a pixel.  Round away from zero, to avoid goofy
+    -- problems (like not recognizing the ground) when we end up moving less
+    -- than requested; this may make us move faster than the physics constants
+    -- would otherwise intend, but, oh well?
+    local naive_movement = self.velocity * dt
+    local goalpos = self.pos + naive_movement
+    goalpos.x = self.velocity.x < 0 and math.floor(goalpos.x) or math.ceil(goalpos.x)
+    goalpos.y = self.velocity.y < 0 and math.floor(goalpos.y) or math.ceil(goalpos.y)
+    --goalpos.y = math.floor(goalpos.y + 0.5)
+    local movement = goalpos - self.pos
 
-    -- TODO round to a tile?  to a pixel?  to half a pixel?
     ----------------------------------------------------------------------------
     -- Collision time!
     --print()
@@ -172,138 +167,21 @@ function PlayerActor:update(dt)
         movement.y = util.clamp(movement.y, mt - t, mb - b)
     end
 
-    -- Skip collision against anything we're already overlapping
-
     local movement0 = movement:clone()
-    --print("Currently at", self.pos.x, self.pos.y, "with shape at", self.shape:bbox())
-    local qqx, qqy = self.shape:bbox()
-    --print("Rounding errors:", self.pos.x - math.floor(self.pos.x), self.pos.y - math.floor(self.pos.y), qqx - math.floor(qqx), qqy - math.floor(qqy))
-    --print("Trying to move", movement:unpack())
-    --[===[
-    local precollisions = worldscene.collider:collisions(self.shape)
-    for shape, delta in pairs(precollisions) do
-        if delta.x ~= 0 or delta.y ~= 0 then
-            print("OVERLAPPING", shape:bbox())
-        end
-    end
-    self.shape:move(movement:unpack())
-
-    local collisions = worldscene.collider:collisions(self.shape)
-    -- TODO this could use some comments?
-    -- TODO maybe rename 'delta' to, like, pushback
-    local separation = Vector(0, 0)
-    local shapes = {}
-    local shape_centers = {}
-    local shape_deltas = {}
-    local shape_delta_lens = {}
-    local shape_distances = {}
-    local center = Vector(self.shape:center())
-    for shape, delta in pairs(collisions) do
-        local pre = precollisions[shape]
-        if not pre or (pre.x == 0 and pre.y == 0) then
-            delta = Vector(unpack(delta))
-            shape_deltas[shape] = delta
-            shape_delta_lens[shape] = delta:len2()
-            local shape_center = Vector(shape:center())
-            shape_centers[shape] = shape_center
-            shape_distances[shape] = center:dist2(shape_center)
-            table.insert(shapes, shape)
-        end
-    end
-    table.sort(shapes, function(a, b)
-        if shape_distances[a] == shape_distances[b] then
-            if shape_delta_lens[a] == shape_delta_lens[b] then
-                return shape_deltas[a].x < shape_deltas[b].x
-            else
-                return shape_delta_lens[a] < shape_delta_lens[b]
-            end
-        else
-            return shape_distances[a] < shape_distances[b]
-        end
-    end)
-
-    self.shape:move((-movement):unpack())
-    local support = Vector(self.shape:support(movement:unpack()))
-
-    local tmin = 1
-    for _, shape in ipairs(shapes) do
-        local intersects, t = shape:intersectsRay(support.x, support.y, movement:unpack())
-        print(intersects, t)
-        if intersects then
-            if t < 1e10 then
-                t = 0
-            end
-            -- TODO oncollide...
-            tmin = math.min(tmin, t)
-        end
-        --[==[
-        local delta = shape_deltas[shape]
-        local still_collides, dx, dy = self.shape:collidesWith(shape)
-        if still_collides then
-            --[[
-            -- Don't allow the rejection to push us in a direction we weren't
-            -- originally moving
-            if movement.x == 0 then
-                -- Not moving at all (any more); ignore
-                dx = 0
-            elseif math.abs(dx) > math.abs(movement.x) then
-                -- This move would push us past zero, so simply cut it to zero
-                dx = -movement.x
-                movement.x = 0
-            else
-                movement.x = movement.x + dx
-            end
-
-            -- Same, for the y-axis
-            if movement.y == 0 then
-                dy = 0
-            elseif math.abs(dy) > math.abs(movement.y) then
-                dy = -movement.y
-                movement.y = 0
-            else
-                movement.y = movement.y + dy
-            end
-            ]]
-            local separation = Vector(dx, dy):projectOn(movement0)
-            local backtrack = separation.projectOn(movement0)
-
-            movement.x = movement.x + dx
-            movement.y = movement.y + dy
-            print("Being shoved back by", dx, dy, "due to shape at", shape:bbox())
-            self.shape:move(dx, dy)
-        end
-        ]==]
-    end
-    print(tmin)
-    movement = movement * tmin
-    ]===]
-
+    local attempted = movement
     local movement, hits, last_slide = worldscene.collider:slide(self.shape, movement:unpack())
     self.last_slide = last_slide
 
-    --print("Final movement is", movement:unpack())
-    --print("Seem to have hit:")
-    --for other in pairs(hits) do print("-", other:bbox()) end
-    if movement.x * util.sign(movement0.x) < math.abs(movement0.x) and math.abs(movement0.x - movement.x) > 1e-8 then
-        self.velocity.x = 0
-    end
-    if movement.y * util.sign(movement0.y) < math.abs(movement0.y) and math.abs(movement0.y - movement.y) > 1e-8 then
-        --print("!!! Trimming velocity, movement changed by", movement.y - movement0.y)
-        self.velocity.y = 0
-    end
-    if movement.y < movement0.y then
+    -- Trim velocity as necessary, based on the last surface we slid against
+    print("velocity is:", self.velocity)
+    local v = last_slide and self.velocity:projectOn(last_slide) or self.velocity
+    print("and now it's", v)
+    self.velocity = v
+    if movement * gravity < movement0 * gravity then
         self.on_ground = true
     end
 
-    --self.shape:move(movement:unpack())
     self.pos = self.pos + movement
-    -- TODO this sounds nice, but it prevents me from knowing when i've hit
-    -- something -- consider a jump that gets me <0.4 pixels from the ceiling,
-    -- and i round away the difference.  hmmm.
-    --[[
-    local roundedpos = Vector(math.floor(self.pos.x + 0.5), math.floor(self.pos.y + 0.5))
-    self.pos = roundedpos
-    ]]
     self.shape:move_to(self.pos:unpack())
 
     -- Update pose depending on movement
