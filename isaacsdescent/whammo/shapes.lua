@@ -3,6 +3,28 @@ local Vector = require 'vendor.hump.vector'
 
 local util = require 'isaacsdescent.util'
 
+-- Smallest unit of distance, in pixels.  Movement is capped to a multiple of
+-- this, and any surfaces closer than this distance are considered touching.
+-- Should be exactly representable as a float (i.e., a power of two) else
+-- you're kinda defeating the point.
+local QUANTUM = 1 / 8
+-- Allowed rounding error when comparing whether two shapes are overlapping.
+-- If they overlap by only this amount, they'll be considered touching.
+local PRECISION = 1e-8
+
+local function round_movement_to_quantum(v)
+    if v.x < 0 then
+        v.x = math.ceil(v.x / QUANTUM) * QUANTUM
+    else
+        v.x = math.floor(v.x / QUANTUM) * QUANTUM
+    end
+    if v.y < 0 then
+        v.y = math.ceil(v.y / QUANTUM) * QUANTUM
+    else
+        v.y = math.floor(v.y / QUANTUM) * QUANTUM
+    end
+end
+
 local Segment = Class{}
 
 function Segment:init(x0, y0, x1, y1)
@@ -214,9 +236,13 @@ function Polygon:slide_towards(other, movement)
     -- Project both shapes onto each axis and look for the minimum distance
     local maxdist = -math.huge
     local maxsep, maxdir
-    -- TODO i would love to get rid of this
+    -- TODO i would love to get rid of ClockRange, and it starts right here; i
+    -- think at most we can return a span of two normals, if you hit a corner
     local clock = util.ClockRange()
+    --print("us:", self:bbox())
+    --print("them:", other:bbox())
     for fullaxis, axis in pairs(axes) do
+        local is_move_axis = fullaxis == movenormal
         local min1, max1, minpt1, maxpt1 = self:project_onto_axis(axis)
         local min2, max2, minpt2, maxpt2 = other:project_onto_axis(axis)
         local dist, sep
@@ -229,28 +255,27 @@ function Polygon:slide_towards(other, movement)
             dist = min1 - max2
             -- Note that sep is always the vector from us to them
             sep = maxpt2 - minpt1
+            -- Likewise, flip the axis so it points towards them
+            fullaxis = -fullaxis
         end
-        if math.abs(dist) < 1e-8 then
+        -- Critically, don't round /up/ from a negative value of less than one
+        -- quantum, because that could make us ignore a non-trivial overlap.
+        -- round_to_quantum is only appropriate for the movement vector!
+        if -PRECISION < dist and dist < QUANTUM then
             dist = 0
         end
+        --print("    axis:", fullaxis, "dist:", dist, "sep:", sep)
         if dist >= 0 then
             -- The movement itself may be a slide, in which case we can stop
             -- here; we know they'll never collide
-            local dot = fullaxis * movement
-            if min1 < min2 then
-                dot = -dot
-            end
-            if dot >= 0 then
-                -- This is a slide
+            if fullaxis * movement <= 0 and dist > 0 then
                 return
             end
+
             -- If the distance isn't negative, then it's possible to do a slide
             -- anywhere in the general direction of this axis
             local perp = fullaxis:perpendicular()
-            if min1 < min2 then
-                perp = -perp
-            end
-            clock:union(-perp, perp)
+            clock:union(perp, -perp)
         end
         if dist > maxdist then
             maxdist = dist
@@ -262,26 +287,39 @@ function Polygon:slide_towards(other, movement)
     if maxdist < 0 then
         -- Shapes are already colliding
         -- TODO should maybe...  return something more specific here?
+        error("seem to be inside something!!  stopping so you can debug buddy  <3")
         return
     end
 
-    -- TODO there must be a more sensible way to calculate this
-    -- Vector describing the shortest gap
     local gap = maxsep:projectOn(maxdir)
     local allowed = movement:projectOn(maxdir)
-    local dv
-    if math.abs(allowed.x) > math.abs(allowed.y) then
-        dv = gap.x / allowed.x
-    else
-        dv = gap.y / allowed.y
+    --print("  max dist:", maxdist, "in dir:", maxdir, "  gap:", gap, "allowed:", allowed)
+    -- If we're already moving in an allowed slide direction, then we can't
+    -- possibly collide
+    if clock:includes(movement) then
+        -- One question remains: will we actually touch?
+        if gap:len2() <= allowed:len2() then
+            -- This is a slide; we will touch (or are already touching) the
+            -- other object, but can continue past it
+            return movement, clock
+        else
+            -- We'll never touch
+            return
+        end
     end
-    if dv > 1 then
+    local mv
+    if math.abs(allowed.x) > math.abs(allowed.y) then
+        mv = movement * gap.x / allowed.x
+    else
+        mv = movement * gap.y / allowed.y
+    end
+    round_movement_to_quantum(mv)
+    local move_len2 = mv:len2()
+    if move_len2 < 0 or move_len2 > movement:len2() then
         -- Won't actually hit!
         return
     end
-    -- TODO i don't reeeally like this since it seems to suggest we will very
-    -- slowly sink into a diagonal surface
-    return dv, clock
+    return mv, clock
 end
 
 -- An AABB, i.e., an unrotated rectangle

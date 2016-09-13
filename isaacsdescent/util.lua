@@ -144,6 +144,30 @@ function ClockRange:extremes()
     return edges
 end
 
+-- Return the extreme that's closest in angle to the given reference vector
+function ClockRange:closest_extreme(reference)
+    if self:isempty() then
+        return nil
+    elseif self:isall() then
+        return reference
+    elseif self:includes(reference) then
+        return reference
+    end
+
+    local ret
+    local maxdot = -math.huge
+    -- Dot product will tell us the closest angle, as long as we normalize each
+    -- extreme first
+    for vec in pairs(self:extremes()) do
+        local dot = vec:normalized() * reference
+        if dot > maxdot then
+            ret = vec
+            maxdot = dot
+        end
+    end
+    return ret
+end
+
 function ClockRange:includes(v)
     if self:isall() then
         return true

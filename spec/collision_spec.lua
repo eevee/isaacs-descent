@@ -62,7 +62,7 @@ describe("Collision", function()
         local player = whammo_shapes.Box(100, 150, 100, 100)
         local successful, hits = collider:slide(player, 0, -150)
         assert.are.equal(Vector(0, -150), successful)
-        assert.is.falsy(hits[wall])
+        assert.are.equal(hits[wall], false)
     end)
     it("should handle diagonal movement into lone corners", function()
         --[[
@@ -144,6 +144,28 @@ describe("Collision", function()
         assert.are.equal(Vector(0, 100), successful)
         assert.is.truthy(hits[wall1])
         assert.is.truthy(hits[wall2])
+    end)
+    it("should not register slides against objects out of range", function()
+        --[[
+            +--------+
+            | player |
+            +--------+    +--------+--------+
+                          | floor1 | floor2 |
+                          +--------+--------+
+            movement is directly right; should not be blocked at all, should
+            slide on floor 1, should NOT slide on floor 2
+        ]]
+        local collider = whammo.Collider(400)
+        local floor1 = whammo_shapes.Box(150, 100, 100, 100)
+        collider:add(floor1)
+        local floor2 = whammo_shapes.Box(250, 100, 100, 100)
+        collider:add(floor2)
+
+        local player = whammo_shapes.Box(0, 0, 100, 100)
+        local successful, hits = collider:slide(player, 100, 0)
+        assert.are.equal(Vector(100, 0), successful)
+        assert.are_equal(false, hits[floor1])
+        assert.are_equal(nil, hits[floor2])
     end)
 
     it("should not let you fall into the floor", function()

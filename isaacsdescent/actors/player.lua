@@ -22,12 +22,14 @@ local PlayerActor = Class{
 
     -- Passive physics parameters
     -- Units are pixels and seconds!
-    min_speed = 1/64 * PICO8V,
+    min_speed = 1/256 * PICO8V,
     max_speed = 1/4 * PICO8V,
     -- TODO this is kind of hard to convert from pico-8 units to seconds; this is in frames, which i assume are 60 fps
     --friction = math.sqrt(0.625),
     --friction = 1/16 * PICO8A,
+    ground_friction = 1,
     friction = 1,
+    max_slope = Vector(1, 1),
 
     -- Active physics parameters
     --xaccel = 0.125 * PICO8A,
@@ -64,36 +66,37 @@ function PlayerActor:init(position)
 end
 
 function PlayerActor:update(dt)
-    local xmult = 1
-    if not self.on_ground then
+    local xmult
+    if self.on_ground then
+        xmult = self.ground_friction
+    else
         xmult = self.aircontrol
     end
-    print()
-    print()
+    --print()
+    --print()
+    --print("position", self.pos)
+    --print(self.velocity, self.min_speed)
 
     -- Explicit movement
     -- TODO should be whichever was pressed last?
     if love.keyboard.isDown('right') then
         self.velocity.x = self.velocity.x + self.xaccel * xmult * dt
+        self.facing_left = false
     elseif love.keyboard.isDown('left') then
         self.velocity.x = self.velocity.x - self.xaccel * xmult * dt
+        self.facing_left = true
     else
         -- Decelerate when not holding a key
         -- TODO this still doesn't /quite/ work with slopes because it doesn't
         -- counteract gravity
-        if self.last_slide and (self.velocity.x ~= 0 or self.velocity.y ~= 0) then
-            local slide1 = self.last_slide:projectOn(self.velocity):normalized()
-            local dot = slide1 * self.velocity
-            local decel = self.xdecel * dt
-            if dot > 0 then
-                slide1 = -slide1
-            else
-                dot = -dot
-            end
-            if dot < decel then
-                decel = dot
-            end
-            self.velocity = self.velocity + slide1 * decel
+        local decel = Vector(self.xdecel, 0)
+        local dot = decel * self.velocity
+        if dot > 0 then
+            decel = -decel
+        end
+        if dot ~= 0 then
+            decel = decel:projectOn(self.velocity)
+            --self.velocity = self.velocity + decel * dt * xmult
         end
     end
 
@@ -124,18 +127,27 @@ function PlayerActor:update(dt)
     end
 
     -- Gravity
+    local pregrav = self.velocity
     self.velocity = self.velocity + gravity * dt
     self.velocity.y = math.min(self.velocity.y, terminal_velocity)
+
+    -- Slope friction
+    -- This is different from regular friction, which is about slowing down when not holding a movement key.  Slope friction is your ability to hold yourself still on a slope...
+    if false and self.last_slide then
+        local slide1 = self.last_slide:normalized()
+        local fric = math.abs(gravity:perpendicular() * slide1)
+        local friction = -fric * slide1
+        --print("velocity before gravity:", pregrav, "magnitude:", pregrav:len())
+        --print("velocity before friction:", self.velocity, "magnitude:", self.velocity:len())
+        --print("gravity:", gravity)
+        --print("friction:", friction, "magnitude:", fric, "/", fric * dt)
+        self.velocity = self.velocity + friction * dt
+        --print("velocity after friction:", self.velocity)
+    end
 
     -- Velocity-based state tracking
     -- TODO _prevx?
     self.on_ground = false
-    -- Note that this has to be done /before/ collision -- if the player tries
-    -- to walk left and immediately bumps into something and is stopped, the
-    -- sprite should still face left
-    if self.velocity.x ~= 0 then
-        self.facing_left = self.velocity.x < 0
-    end
 
     -- Calculate the desired movement, always trying to move us such that we
     -- end up on the edge of a pixel.  Round away from zero, to avoid goofy
@@ -146,17 +158,17 @@ function PlayerActor:update(dt)
     local goalpos = self.pos + naive_movement
     goalpos.x = self.velocity.x < 0 and math.floor(goalpos.x) or math.ceil(goalpos.x)
     goalpos.y = self.velocity.y < 0 and math.floor(goalpos.y) or math.ceil(goalpos.y)
-    --goalpos.y = math.floor(goalpos.y + 0.5)
     local movement = goalpos - self.pos
 
     ----------------------------------------------------------------------------
     -- Collision time!
-    --print()
-    --[[
-    self.pos = Vector(282.57071216542, 256.67301583553)
-    self.shape:move(self.pos.x - self.shape.x0, self.pos.y - self.shape.y0)
-    movement = Vector(4.5186891533476, 5.1286257491438)
-    ]]
+    if love.keyboard.isDown('s') then
+        self.pos = Vector(416.5,448.5)
+        self.shape:move(self.pos.x - self.shape.x0, self.pos.y - self.shape.y0)
+        self.velocity = Vector(-160.89588755785371177,-95.287752296280814335)
+        movement = Vector(-3.5,-2.5)
+    end
+    --print("Collision time!  position", self.pos, "velocity", self.velocity, "movement", movement)
 
     -- First things first: restrict movement to within the current map
     -- TODO ARGH, worldscene is a global!
@@ -169,19 +181,33 @@ function PlayerActor:update(dt)
 
     local movement0 = movement:clone()
     local attempted = movement
-    local movement, hits, last_slide = worldscene.collider:slide(self.shape, movement:unpack())
-    self.last_slide = last_slide
+    local movement, hits, last_clock = worldscene.collider:slide(self.shape, movement:unpack())
 
     -- Trim velocity as necessary, based on the last surface we slid against
-    print("velocity is:", self.velocity)
-    local v = last_slide and self.velocity:projectOn(last_slide) or self.velocity
-    print("and now it's", v)
-    self.velocity = v
-    if movement * gravity < movement0 * gravity then
+    --print("velocity is", self.velocity, "and clock is", last_clock)
+    if last_clock then
+        local axis = last_clock:closest_extreme(self.velocity)
+        if not axis then
+            -- TODO stop?  once i fix the empty thing
+        elseif self.velocity * axis < 0 then
+            -- Nearest axis points away from our movement, so we have to stop
+            self.velocity = Vector(0, 0)
+        else
+        --print("axis", axis, "dot product", self.velocity * axis)
+            -- Nearest axis is within a quarter-turn, so slide that direction
+            self.velocity = self.velocity:projectOn(axis)
+        end
+        self.last_slide = axis
+    end
+    --print("and now it's", self.velocity)
+    --print("movement", movement, "movement0", movement0)
+    -- Ground test: from where we are, are we allowed to move straight down?
+    if not last_clock:includes(gravity) then
         self.on_ground = true
     end
 
     self.pos = self.pos + movement
+    --print("FINAL POSITION:", self.pos)
     self.shape:move_to(self.pos:unpack())
 
     -- Update pose depending on movement
@@ -203,7 +229,11 @@ end
 
 function PlayerActor:draw()
     self.sprite:draw_at(self.pos)
-    love.graphics.setColor(255, 0, 0, 128)
+    if self.on_ground then
+        love.graphics.setColor(255, 0, 0, 128)
+    else
+        love.graphics.setColor(0, 192, 0, 128)
+    end
     self.shape:draw('fill')
     love.graphics.setColor(255, 255, 255)
 end

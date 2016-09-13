@@ -13,7 +13,7 @@ function WorldScene:init(map)
     self.map = map
     self.actors = {}
 
-    self.collider = whammo.Collider(map.tilewidth)
+    self.collider = whammo.Collider(2 * map.tilewidth)
     map:add_to_collider(self.collider)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
@@ -41,9 +41,16 @@ function WorldScene:draw()
     end
 
     if debug_hits then
-        love.graphics.setColor(255, 0, 0, 128)
-        for hit in pairs(debug_hits) do
+        for hit, is_collision in pairs(debug_hits) do
+            if is_collision then
+                love.graphics.setColor(255, 0, 0, 128)
+            else
+                love.graphics.setColor(0, 192, 0, 128)
+            end
             hit:draw('fill')
+            --love.graphics.setColor(255, 255, 0)
+            --local x, y = hit:bbox()
+            --love.graphics.print(("%0.2f"):format(d), x, y)
         end
         love.graphics.setColor(255, 255, 255)
     end
