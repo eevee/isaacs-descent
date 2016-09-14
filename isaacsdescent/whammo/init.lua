@@ -32,7 +32,7 @@ function Collider:slide(shape, dx, dy)
     local stuckcounter = 0
 
     while true do
-        --print("--- STARTING ROUND")
+        --print("--- STARTING ROUND; ATTEMPTING TO MOVE", attempted)
         local hits = {}
         local hits2 = {}
         local anyhit = false
@@ -108,13 +108,12 @@ function Collider:slide(shape, dx, dy)
             lastclock = finalclock
         end
 
-        -- TODO slide might be nil
-        if slide then
+        if slide and attempted ~= shortest_move then
             local remaining = attempted - shortest_move
             attempted = remaining:projectOn(slide)
             --print("slide!  remaining", remaining, "-> attempted", attempted)
         else
-            attempted = Vector(0, 0)
+            attempted = Vector.zero:clone()
         end
 
         if attempted.x == 0 and attempted.y == 0 then
