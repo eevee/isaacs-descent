@@ -167,6 +167,31 @@ describe("Collision", function()
         assert.are_equal(false, hits[floor1])
         assert.are_equal(nil, hits[floor2])
     end)
+    it("should count touches even when not moving", function()
+        --[[
+                     +--------+
+                     | player |
+            +--------+--------+--------+
+            | floor1 | floor2 | floor3 |
+            +--------+--------+--------+
+            movement is nowhere; should touch all three floors
+            at full speed
+        ]]
+        local collider = whammo.Collider(400)
+        local floor1 = whammo_shapes.Box(0, 100, 100, 100)
+        collider:add(floor1)
+        local floor2 = whammo_shapes.Box(100, 100, 100, 100)
+        collider:add(floor2)
+        local floor3 = whammo_shapes.Box(200, 100, 100, 100)
+        collider:add(floor3)
+
+        local player = whammo_shapes.Box(100, 0, 100, 100)
+        local successful, hits = collider:slide(player, 0, 0)
+        assert.are.equal(Vector(0, 0), successful)
+        assert.are.equal(false, hits[floor1])
+        assert.are.equal(false, hits[floor2])
+        assert.are.equal(false, hits[floor3])
+    end)
 
     it("should not let you fall into the floor", function()
         --[[

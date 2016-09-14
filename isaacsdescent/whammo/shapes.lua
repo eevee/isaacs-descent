@@ -224,8 +224,10 @@ function Polygon:slide_towards(other, movement)
     -- Mapping of normal vectors (i.e. projection axes) to their normalized
     -- versions (needed for comparing the results of the projection)
     local movenormal = movement:perpendicular()
-    --local axes = {[movement] = movement:normalized()}
-    local axes = {[movenormal] = movenormal:normalized()}
+    local axes = {}
+    if movenormal ~= Vector.zero then
+        axes[movenormal] = movenormal:normalized()
+    end
     for norm, norm1 in pairs(self:normals()) do
         axes[norm] = norm1
     end
