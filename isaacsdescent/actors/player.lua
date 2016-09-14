@@ -14,7 +14,8 @@ local PlayerActor = Class{
     -- TODO separate code from twiddles
     pos = nil,
     velocity = nil,
-    shape = whammo_shapes.Box(0, 0, 32, 64),
+    shape = whammo_shapes.Box(8, 16, 20, 48),
+    anchor = Vector(16, 64),
 
     -- Visuals (should maybe be wrapped in another object?)
     sprite_name = 'isaac',
@@ -50,14 +51,13 @@ function PlayerActor:init(position)
 
     -- TODO arrgh, this global.  sometimes i just need access to the game.
     -- should this be done on enter, maybe?
+    -- TODO shouldn't the anchor really be part of the sprite?  hm, but then
+    -- how would our bouncing box change?
     self.sprite = game.sprites[self.sprite_name]:instantiate()
 
-    -- TODO would like to have an anchor property
-    self.shape:move(position:unpack())
-    --[[
-    local center = Vector(self.shape:center())
-    self.shape:moveTo((self.pos + center):unpack())
-    ]]
+    -- TODO christ
+    self.initial_shape_offset = Vector(self.shape.x0, self.shape.y0)
+    self.shape:move_to((position - self.anchor + self.initial_shape_offset):unpack())
 end
 
 function PlayerActor:update(dt)
@@ -73,12 +73,15 @@ function PlayerActor:update(dt)
 
     -- Explicit movement
     -- TODO should be whichever was pressed last?
+    local pose = 'stand'
     if love.keyboard.isDown('right') then
         self.velocity.x = self.velocity.x + self.xaccel * xmult * dt
         self.facing_left = false
+        pose = 'walk'
     elseif love.keyboard.isDown('left') then
         self.velocity.x = self.velocity.x - self.xaccel * xmult * dt
         self.facing_left = true
+        pose = 'walk'
     end
 
     -- Jumping
@@ -99,6 +102,17 @@ function PlayerActor:update(dt)
     else
         self.jumptime = self.max_jumptime
     end
+
+    -- Update pose depending on movement
+    -- TODO how do these work for things that aren't players?
+    if self.facing_left then
+        pose = pose .. '/left'
+    else
+        pose = pose .. '/right'
+    end
+    -- TODO hmm, seems a slight shame to call update() when the new pose might clobber that anyway; maybe combine these methods?
+    self.sprite:update(dt)
+    self.sprite:set_pose(pose)
 
     -- Passive adjustments
     if math.abs(self.velocity.x) > self.max_speed then
@@ -200,29 +214,11 @@ function PlayerActor:update(dt)
 
     self.pos = self.pos + movement
     --print("FINAL POSITION:", self.pos)
-    self.shape:move_to(self.pos:unpack())
-
-    -- Update pose depending on movement
-    -- TODO how do these work for things that aren't players?
-    local pose
-    -- TODO this is slightly glitchy, has us "walking" on slopes even when still
-    if self.velocity.x == 0 then
-        pose = 'stand'
-    else
-        pose = 'walk'
-    end
-    if self.facing_left then
-        pose = pose .. '/left'
-    else
-        pose = pose .. '/right'
-    end
-    -- TODO hmm, seems a slight shame to call update() when the new pose might clobber that anyway; maybe combine these methods?
-    self.sprite:update(dt)
-    self.sprite:set_pose(pose)
+    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
 end
 
 function PlayerActor:draw()
-    self.sprite:draw_at(self.pos)
+    self.sprite:draw_at(self.pos - self.anchor)
     if self.on_ground then
         love.graphics.setColor(255, 0, 0, 128)
     else
