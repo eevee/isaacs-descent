@@ -14,6 +14,7 @@ local PlayerActor = Class{
     -- TODO separate code from twiddles
     pos = nil,
     velocity = nil,
+    -- TODO are these part of the sprite?
     shape = whammo_shapes.Box(8, 16, 20, 48),
     anchor = Vector(16, 64),
 
@@ -63,6 +64,8 @@ end
 function PlayerActor:update(dt)
     local xmult
     if self.on_ground then
+        -- TODO adjust this factor when on a slope, so ascending is harder than
+        -- descending?  maybe even affect max_speed going uphill?
         xmult = self.ground_friction
     else
         xmult = self.aircontrol
@@ -96,6 +99,7 @@ function PlayerActor:update(dt)
             end
             ]]
             self.jumptime = self.jumptime + dt
+            self.on_ground = false
         end
     elseif self.on_ground then
         self.jumptime = 0
@@ -121,38 +125,45 @@ function PlayerActor:update(dt)
         self.velocity.x = 0
     end
 
-    -- Gravity
-    self.velocity = self.velocity + gravity * dt
-    self.velocity.y = math.min(self.velocity.y, terminal_velocity)
-
-    -- TODO factor the ground_friction constant into both of these
     -- Friction -- the general tendency for everything to decelerate.
     -- It always pushes against the direction of motion, but never so much that
     -- it would reverse the motion.  Note that taking the dot product with the
     -- horizontal produces the normal force.
-    -- Include the dt factor from the beginning, to make capping easier
+    -- Include the dt factor from the beginning, to make capping easier.
+    -- Also, doing this before anything else ensures that it only considers
+    -- deliberate movement and momentum, not gravity.
     local vellen = self.velocity:len()
-    local vel1 = self.velocity / vellen
-    local deceleration = Vector(self.friction, 0) * vel1 * dt
-    if math.abs(deceleration) > vellen then
-        deceleration = util.sign(deceleration) * vellen
+    if vellen > 1e-8 then
+        local vel1 = self.velocity / vellen
+        local friction_vector = Vector(self.friction, 0)
+        local deceleration = friction_vector * vel1 * dt
+        local decel_vector = -deceleration * friction_vector:normalized()
+        decel_vector:trimInplace(vellen)
+        self.velocity = self.velocity + decel_vector
+        --print("velocity after deceleration:", self.velocity)
     end
-    if self.velocity.x > 0 then
-        deceleration = -deceleration
-    end
-    self.velocity = self.velocity + deceleration * vel1
 
+    -- TODO factor the ground_friction constant into both of these
     -- Slope resistance -- an actor's ability to stay in place on an incline
     -- It always pushes upwards along the slope.  It has no cap, since it
     -- should always exactly oppose gravity, as long as the slope is shallow
     -- enough.
     -- Skip it entirely if we're not even moving in the general direction
     -- of gravity, though, so it doesn't interfere with jumping.
-    if self.on_ground and self.last_slide and self.velocity * gravity >= 0 then
+    if self.on_ground and self.last_slide then
+        --print("last slide:", self.last_slide)
         local slide1 = self.last_slide:normalized()
-        local slope_resistance = -(gravity * slide1)
-        self.velocity = self.velocity + slope_resistance * dt * slide1
+        if gravity * self.max_slope:normalized() - gravity * slide1 > -1e-8 then
+            local slope_resistance = -(gravity * slide1)
+            self.velocity = self.velocity + slope_resistance * dt * slide1
+            --print("velocity after slope resistance:", self.velocity)
+        end
     end
+
+    -- Gravity
+    self.velocity = self.velocity + gravity * dt
+    self.velocity.y = math.min(self.velocity.y, terminal_velocity)
+    --print("velocity after gravity:", self.velocity)
 
     -- Calculate the desired movement, always trying to move us such that we
     -- end up on the edge of a pixel.  Round away from zero, to avoid goofy
@@ -202,13 +213,18 @@ function PlayerActor:update(dt)
             -- Nearest axis is within a quarter-turn, so slide that direction
             self.velocity = self.velocity:projectOn(axis)
         end
-        self.last_slide = axis
     end
     --print("and now it's", self.velocity)
     --print("movement", movement, "movement0", movement0)
 
     -- Ground test: from where we are, are we allowed to move straight down?
     -- TODO pretty sure this won't work if the slope points the other way
+    -- TODO i really want to replace clocks with just normals
+    if last_clock then
+        self.last_slide = last_clock:closest_extreme(gravity)
+    else
+        self.last_slide = nil
+    end
     local blocked_clock = last_clock:inverted()
     self.on_ground = blocked_clock:includes(self.max_slope)
 

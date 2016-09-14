@@ -114,7 +114,7 @@ function love.load(arg)
     --map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
     map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene(map)
-    worldscene:add_actor(PlayerActor(Vector(1, 6) * TILE_SIZE))
+    worldscene:add_actor(PlayerActor(Vector(1, 8) * TILE_SIZE))
 
     Gamestate.registerEvents()
     Gamestate.switch(worldscene)
