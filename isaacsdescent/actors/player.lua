@@ -235,6 +235,7 @@ end
 
 function PlayerActor:draw()
     self.sprite:draw_at(self.pos - self.anchor)
+    do return end
     if self.on_ground then
         love.graphics.setColor(255, 0, 0, 128)
     else

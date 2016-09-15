@@ -263,10 +263,6 @@ function TiledMap:draw(origin)
             end
         end
     end
-
-    for _, shape in pairs(self.shapes) do
-        shape:draw('line')
-    end
 end
 
 return TiledMap

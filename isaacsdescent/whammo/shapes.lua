@@ -340,6 +340,10 @@ function Box:init(x, y, width, height)
     self.height = height
 end
 
+function Box:clone()
+    return Box(self.x0, self.y0, self.width, self.height)
+end
+
 function Box:_generate_normals()
 end
 

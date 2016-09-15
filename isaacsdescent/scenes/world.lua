@@ -1,8 +1,15 @@
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
+local actors_misc = require 'isaacsdescent.actors.misc'
 local BaseScene = require 'isaacsdescent.scenes.base'
 local whammo = require 'isaacsdescent.whammo'
+
+-- TODO yeah this sucks
+local actors_lookup = {
+    magical_bridge = actors_misc.MagicalBridge,
+    wooden_switch = actors_misc.WoodenSwitch,
+}
 
 local WorldScene = Class{
     __includes = BaseScene,
@@ -18,7 +25,8 @@ function WorldScene:init(map)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
     for _, template in ipairs(map.actor_templates) do
-        -- TODO make me happen, and also, add in sprites
+        local class = actors_lookup[template.name]
+        self:add_actor(class(template.position))
     end
 end
 
@@ -38,6 +46,11 @@ function WorldScene:draw()
 
     for _, actor in ipairs(self.actors) do
         actor:draw(dt)
+    end
+
+    do return end
+    for shape in pairs(self.collider.shapes) do
+        shape:draw('line')
     end
 
     if debug_hits then

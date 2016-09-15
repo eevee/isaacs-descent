@@ -106,13 +106,17 @@ function love.load(arg)
 
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
+    game.sprites.wooden_switch = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.wooden_switch:add_pose('default', {9, 4}, 1, 'pauseAtEnd')
+    game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
 
     local resource_manager = ResourceManager()
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
-    --map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
-    map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
+    map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
+    --map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene(map)
     worldscene:add_actor(PlayerActor(Vector(1, 8) * TILE_SIZE))
 

@@ -11,12 +11,20 @@
     {
      "42":
         {
-         "actor":"magic-platform"
+         "actor":"magical_bridge"
+        },
+     "56":
+        {
+         "actor":"wooden_switch"
         }
     },
  "tilepropertytypes":
     {
      "42":
+        {
+         "actor":"string"
+        },
+     "56":
         {
          "actor":"string"
         }
