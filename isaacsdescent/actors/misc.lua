@@ -73,8 +73,12 @@ function MagicalBridge:init(position)
     -- TODO lol
     WoodenSwitch.init(self, position)
 
-    self.enabled = true
-    self.timer = 0.8
+    self.enabled = false
+    self.timer = 0
+end
+
+function MagicalBridge:blocks(actor, d)
+    return self.enabled
 end
 
 function MagicalBridge:reset()
@@ -93,11 +97,10 @@ end
 
 function MagicalBridge:update(dt)
     -- TODO decoractor.update(self)
-    if not self.enabled or self.timer <= 0 then
-	return
+    if self.enabled and self.timer > 0 then
+	-- TODO redo this with hump's tweens
+	self.timer = self.timer - dt
     end
-    -- TODO redo this with hump's tweens
-    self.timer = self.timer - dt
 end
 
 function MagicalBridge:draw()

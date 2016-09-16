@@ -22,6 +22,9 @@ function WorldScene:init(map)
 
     self.collider = whammo.Collider(2 * map.tilewidth)
     map:add_to_collider(self.collider)
+    -- TODO i feel like all this stuff is a /little/...  disconnected.  like
+    -- what happens if an actor's shape changes?
+    self.shape_to_actor = {}
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
     for _, template in ipairs(map.actor_templates) do
@@ -54,10 +57,15 @@ function WorldScene:draw()
     end
 
     if debug_hits then
-        for hit, is_collision in pairs(debug_hits) do
-            if is_collision then
+        for hit, touchtype in pairs(debug_hits) do
+            if touchtype > 0 then
+                -- Collision: red
                 love.graphics.setColor(255, 0, 0, 128)
+            elseif touchtype < 0 then
+                -- Overlap: blue
+                love.graphics.setColor(0, 64, 255, 128)
             else
+                -- Touch: green
                 love.graphics.setColor(0, 192, 0, 128)
             end
             hit:draw('fill')
@@ -76,6 +84,9 @@ function WorldScene:add_actor(actor)
     table.insert(self.actors, actor)
 
     self.collider:add(actor.shape)
+
+    -- TODO again, yeah, what happens if the shape changes?
+    self.shape_to_actor[actor.shape] = actor
 end
 
 

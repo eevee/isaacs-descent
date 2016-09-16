@@ -268,8 +268,8 @@ function Polygon:slide_towards(other, movement)
         end
         --print("    axis:", fullaxis, "dist:", dist, "sep:", sep)
         if dist >= 0 then
-            -- The movement itself may be a slide, in which case we can stop
-            -- here; we know they'll never collide
+            -- The movement itself may be away from the other shape, in which
+            -- case we can stop here; we know they'll never collide
             if fullaxis * movement <= 0 and dist > 0 then
                 return
             end
@@ -289,8 +289,10 @@ function Polygon:slide_towards(other, movement)
     if maxdist < 0 then
         -- Shapes are already colliding
         -- TODO should maybe...  return something more specific here?
-        error("seem to be inside something!!  stopping so you can debug buddy  <3")
-        return
+        --error("seem to be inside something!!  stopping so you can debug buddy  <3")
+        --print("ALREADY COLLIDING", worldscene.shape_to_actor[other])
+        return Vector.zero, -1, util.ClockRange(util.ClockRange.ZERO, util.ClockRange.ZERO)
+        --return
     end
 
     local gap = maxsep:projectOn(maxdir)
@@ -300,15 +302,18 @@ function Polygon:slide_towards(other, movement)
     -- possibly collide
     if clock:includes(movement) then
         -- One question remains: will we actually touch?
+        -- TODO i'm not totally confident in this logic; seems like near misses
+        -- without touches might not be handled correctly...?
         if gap:len2() <= allowed:len2() then
             -- This is a slide; we will touch (or are already touching) the
             -- other object, but can continue past it
-            return movement, clock
+            return movement, 0, clock
         else
             -- We'll never touch
             return
         end
     end
+
     local mv
     if math.abs(allowed.x) > math.abs(allowed.y) then
         mv = movement * gap.x / allowed.x
@@ -317,11 +322,13 @@ function Polygon:slide_towards(other, movement)
     end
     round_movement_to_quantum(mv)
     local move_len2 = mv:len2()
-    if move_len2 < 0 or move_len2 > movement:len2() then
+    --if move_len2 < 0 or move_len2 > movement:len2() then
+    if move_len2 > movement:len2() then
         -- Won't actually hit!
         return
     end
-    return mv, clock
+
+    return mv, 1, clock
 end
 
 -- An AABB, i.e., an unrotated rectangle

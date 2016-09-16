@@ -228,6 +228,15 @@ function PlayerActor:update(dt)
     local blocked_clock = last_clock:inverted()
     self.on_ground = blocked_clock:includes(self.max_slope)
 
+    self.touching_mechanism = nil
+    for shape in pairs(hits) do
+        local actor = worldscene.shape_to_actor[shape]
+        if actor and actor.is_usable then
+            self.touching_mechanism = actor
+            break
+        end
+    end
+
     self.pos = self.pos + movement
     --print("FINAL POSITION:", self.pos)
     self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
@@ -235,6 +244,11 @@ end
 
 function PlayerActor:draw()
     self.sprite:draw_at(self.pos - self.anchor)
+    if self.touching_mechanism then
+        love.graphics.setColor(0, 64, 255, 128)
+        self.touching_mechanism.shape:draw('fill')
+        love.graphics.setColor(255, 255, 255)
+    end
     do return end
     if self.on_ground then
         love.graphics.setColor(255, 0, 0, 128)
