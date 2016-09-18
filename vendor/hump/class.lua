@@ -46,7 +46,13 @@ end
 -- deeply copies `other' into `class'. keys in `other' that are already
 -- defined in `class' are omitted
 local function include(class, other)
-	return include_helper(class, other, {})
+	--return include_helper(class, other, {})
+	-- Yeah nope
+	for k, v in pairs(other) do
+		if class[k] == nil then
+			class[k] = v
+		end
+	end
 end
 
 -- returns a deep copy of `other'

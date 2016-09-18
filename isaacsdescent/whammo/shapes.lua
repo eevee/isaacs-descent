@@ -141,6 +141,11 @@ function Polygon:init(...)
     self:_generate_normals()
 end
 
+function Polygon:clone()
+    -- TODO this shouldn't need to recompute all its segments
+    return Polygon(unpack(self.coords))
+end
+
 function Polygon:_generate_normals()
     self._normals = {}
     for _, edge in ipairs(self.edges) do

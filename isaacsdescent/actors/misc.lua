@@ -1,6 +1,7 @@
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
+local actors_base = require 'isaacsdescent.actors.base'
 local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 
 -- TODO some overall questions about this setup:
@@ -10,6 +11,8 @@ local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 
 -- wooden switch (platforms)
 local WoodenSwitch = Class{
+    __includes = actors_base.Actor,
+
     sprite_name = 'wooden_switch',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -19,17 +22,6 @@ local WoodenSwitch = Class{
 
     is_usable = true,
 }
-
-function WoodenSwitch:init(position)
-    self.pos = position
-    self.velocity = Vector.zero:clone()
-
-    self.sprite = game.sprites[self.sprite_name]:instantiate()
-
-    self.shape = self.shape:clone()
-    self.initial_shape_offset = Vector(self.shape.x0, self.shape.y0)
-    self.shape:move_to((position - self.anchor + self.initial_shape_offset):unpack())
-end
 
 function WoodenSwitch:blocks(actor, d)
     return false
@@ -55,23 +47,17 @@ function WoodenSwitch:on_use(activator)
     end
 end
 
-function WoodenSwitch:update(dt)
-end
-
-function WoodenSwitch:draw()
-    self.sprite:draw_at(self.pos)
-end
-
 -- magical bridge, activated by wooden switch
 local MagicalBridge = Class{
+    __includes = actors_base.Actor,
+
     sprite_name = 'magical_bridge',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 8),
 }
 
 function MagicalBridge:init(position)
-    -- TODO lol
-    WoodenSwitch.init(self, position)
+    actors_base.Actor.init(self, position)
 
     self.enabled = false
     self.timer = 0
@@ -104,11 +90,15 @@ function MagicalBridge:update(dt)
 end
 
 function MagicalBridge:draw()
-    if self.timer > 0 then
-	local alpha = self.timer / 0.8 * 255
-	love.graphics.setColor(255, 255, 255, alpha)
-	self.sprite:draw_at(self.pos)
-	love.graphics.setColor(255, 255, 255)
+    if self.enabled then
+	if self.timer > 0 then
+	    local alpha = (1 - self.timer / 0.8) * 255
+	    love.graphics.setColor(255, 255, 255, alpha)
+	    self.sprite:draw_at(self.pos)
+	    love.graphics.setColor(255, 255, 255)
+	else
+	    self.sprite:draw_at(self.pos)
+	end
     end
 end
 
