@@ -9,6 +9,27 @@ local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 -- 2. where are sprites even defined?  also in tiled, i guess?
 -- 3. do these actors use the sprites given on the map, or what?  do they also name their own sprites?  can those conflict?
 
+-- spikes
+local SpikesUp = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'spikes_up',
+    anchor = Vector(0, 0),
+    shape = whammo_shapes.Box(0, 24, 32, 32),
+}
+
+function SpikesUp:blocks(actor, d)
+    return true
+end
+
+function SpikesUp:on_collide(other, direction)
+    if other.is_player then
+	-- TODO i feel that damage should be dealt in a more roundabout way?
+	other:die()
+    end
+end
+
+
 -- wooden switch (platforms)
 local WoodenSwitch = Class{
     __includes = actors_base.Actor,
@@ -23,10 +44,7 @@ local WoodenSwitch = Class{
     is_usable = true,
 }
 
-function WoodenSwitch:blocks(actor, d)
-    return false
-end
-
+-- TODO nothing calls this
 function WoodenSwitch:reset()
     self.is_usable = true
     self:set_pose"default"
@@ -46,6 +64,7 @@ function WoodenSwitch:on_use(activator)
         end
     end
 end
+
 
 -- magical bridge, activated by wooden switch
 local MagicalBridge = Class{
@@ -104,6 +123,7 @@ end
 
 
 return {
+    SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,
 }

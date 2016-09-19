@@ -2,45 +2,34 @@ local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
 local actors_misc = require 'isaacsdescent.actors.misc'
+local Player = require 'isaacsdescent.actors.player'
 local BaseScene = require 'isaacsdescent.scenes.base'
 local whammo = require 'isaacsdescent.whammo'
 
 -- TODO yeah this sucks
 local actors_lookup = {
+    spikes_up = actors_misc.SpikesUp,
     magical_bridge = actors_misc.MagicalBridge,
     wooden_switch = actors_misc.WoodenSwitch,
 }
 
 local WorldScene = Class{
     __includes = BaseScene,
+    __tostring = function(self) return "worldscene" end,
 }
 
 function WorldScene:init(map)
     BaseScene.init(self)
-    self.map = map
-    self.actors = {}
 
-    self.collider = whammo.Collider(2 * map.tilewidth)
-    map:add_to_collider(self.collider)
-    -- TODO i feel like all this stuff is a /little/...  disconnected.  like
-    -- what happens if an actor's shape changes?
-    self.shape_to_actor = {}
-
-    -- TODO this seems more a candidate for an 'enter' or map-switch event
-    for _, template in ipairs(map.actor_templates) do
-        local class = actors_lookup[template.name]
-        self:add_actor(class(template.position))
-    end
+    self:load_map(map)
 end
 
 --------------------------------------------------------------------------------
 -- hump.gamestate hooks
 
 function WorldScene:update(dt)
-    if love.keyboard.isDown('a') then
     for _, actor in ipairs(self.actors) do
         actor:update(dt)
-    end
     end
 end
 
@@ -79,6 +68,31 @@ end
 
 --------------------------------------------------------------------------------
 -- API
+
+function WorldScene:load_map(map)
+    self.collider = whammo.Collider(4 * map.tilewidth)
+    self.map = map
+    self.actors = {}
+
+    -- TODO this seems clearly wrong, especially since i don't clear the
+    -- collider, but it happens to work (i think)
+    map:add_to_collider(self.collider)
+    -- TODO i feel like all this stuff is a /little/...  disconnected.  like
+    -- what happens if an actor's shape changes?
+    self.shape_to_actor = {}
+
+    self:add_actor(Player(Vector(1 * map.tilewidth, 8 * map.tileheight)))
+
+    -- TODO this seems more a candidate for an 'enter' or map-switch event
+    for _, template in ipairs(map.actor_templates) do
+        local class = actors_lookup[template.name]
+        self:add_actor(class(template.position))
+    end
+end
+
+function WorldScene:reload_map()
+    self:load_map(self.map)
+end
 
 function WorldScene:add_actor(actor)
     table.insert(self.actors, actor)

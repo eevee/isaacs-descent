@@ -58,8 +58,13 @@ end
 
 -- Determines whether this actor blocks another one.  By default, actors are
 -- non-blocking, and mobile actors are blocking
-function Actor:blocks(actor, d)
+function Actor:blocks(actor, direction)
     return false
+end
+
+-- Called every frame that another actor is touching this one
+-- TODO that seems excessive?
+function Actor:on_collide(actor, direction)
 end
 
 
@@ -219,6 +224,17 @@ function MobileActor:_do_physics(dt)
     self.pos = self.pos + movement
     --print("FINAL POSITION:", self.pos)
     self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
+
+    -- Tell everyone we've hit them
+    -- TODO surely we should announce this in the order we hit!  all the more
+    -- reason to hoist the loop out of whammo and into here
+    for shape in pairs(hits) do
+	local actor = worldscene.shape_to_actor[shape]
+	if actor then
+	    -- TODO should we also pass along the touchtype?
+	    actor:on_collide(self, movement)
+	end
+    end
 
     return hits
 end

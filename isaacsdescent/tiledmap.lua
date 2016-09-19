@@ -109,7 +109,6 @@ function TiledTileset:get_collision(tileid)
     end
 
     if coll.polygon then
-        print("COOL A POLYGON")
         local points = {}
         for _, pt in ipairs(coll.polygon) do
             if _ ~= 1 then
@@ -117,11 +116,9 @@ function TiledTileset:get_collision(tileid)
                 table.insert(points, pt.y)
             end
         end
-        print(unpack(points))
         return whammo_shapes.Polygon(unpack(points))
     end
 
-    print(coll.x, coll.y, coll.width, coll.height)
     return whammo_shapes.Box(
         coll.x, coll.y, coll.width, coll.height)
 end
@@ -217,6 +214,7 @@ function TiledMap:add_to_collider(collider)
         for t = 0, width * height - 1 do
             local gid = data[t + 1]
             if gid == 34 then
+                -- TODO besides being a dumb ad-hoc hack, this also makes the appearance change when restarting a map.  looks like i need maphash!
                 local r = love.math.random(86, 89)
                 if r ~= 86 then
                     gid = r

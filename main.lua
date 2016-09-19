@@ -106,6 +106,8 @@ function love.load(arg)
 
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
+    game.sprites.spikes_up = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.spikes_up:add_pose('default', {9, 1}, 1, 'pauseAtEnd')
     game.sprites.wooden_switch = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.wooden_switch:add_pose('default', {9, 4}, 1, 'pauseAtEnd')
     game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
@@ -118,7 +120,6 @@ function love.load(arg)
     map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
     --map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene(map)
-    worldscene:add_actor(Player(Vector(1, 8) * TILE_SIZE))
 
     Gamestate.registerEvents()
     Gamestate.switch(worldscene)
@@ -127,6 +128,7 @@ function love.load(arg)
     local fontscale = 2
     m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
     m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
+    love.graphics.setFont(m5x7)
 end
 
 function love.draw()

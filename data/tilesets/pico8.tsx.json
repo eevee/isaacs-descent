@@ -9,6 +9,10 @@
  "tileheight":32,
  "tileproperties":
     {
+     "8":
+        {
+         "actor":"spikes_up"
+        },
      "42":
         {
          "actor":"magical_bridge"
@@ -20,6 +24,10 @@
     },
  "tilepropertytypes":
     {
+     "8":
+        {
+         "actor":"string"
+        },
      "42":
         {
          "actor":"string"

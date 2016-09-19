@@ -12,9 +12,16 @@ local Player = Class{
     shape = whammo_shapes.Box(8, 16, 20, 48),
     anchor = Vector(16, 64),
     sprite_name = 'isaac',
+
+    is_player = true,
 }
 
 function Player:update(dt)
+    if self.is_dead then
+        -- TODO buuut still gotta update the sprite...
+        return
+    end
+
     local xmult
     if self.on_ground then
         -- TODO adjust this factor when on a slope, so ascending is harder than
@@ -107,6 +114,22 @@ function Player:draw()
     end
     self.shape:draw('fill')
     love.graphics.setColor(255, 255, 255)
+end
+
+local Gamestate = require 'vendor.hump.gamestate'
+local DeadScene = require 'isaacsdescent.scenes.dead'
+-- TODO should other things also be able to die?
+function Player:die()
+    if not self.is_dead then
+        self.is_dead = true
+        -- TODO LOL THIS WILL NOT FLY but the problem with putting a check in
+        -- WorldScene is that it will then explode.  so maybe this should fire an
+        -- event?  hump has an events thing, right?  or, maybe knife, maybe let's
+        -- switch to knife...
+        -- TODO oh, it gets better: switch gamestate during an update means draw
+        -- doesn't run this cycle, so you get a single black frame
+        Gamestate.switch(DeadScene(Gamestate.current()))
+    end
 end
 
 
