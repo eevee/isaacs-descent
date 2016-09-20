@@ -112,6 +112,8 @@ function love.load(arg)
     game.sprites.wooden_switch:add_pose('default', {9, 4}, 1, 'pauseAtEnd')
     game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
+    game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.savepoint:add_pose('default', {9, 2}, 1, 'pauseAtEnd')
 
     local resource_manager = ResourceManager()
     resource_manager:register_default_loaders()

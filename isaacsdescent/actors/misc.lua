@@ -122,8 +122,19 @@ function MagicalBridge:draw()
 end
 
 
+local Savepoint = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'savepoint',
+    anchor = Vector(16, 16),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+    -- TODO z?  should always be in background
+}
+
+
 return {
     SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,
+    Savepoint = Savepoint,
 }

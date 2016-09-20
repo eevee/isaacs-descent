@@ -2,6 +2,7 @@ local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
 local actors_base = require 'isaacsdescent.actors.base'
+local actors_misc = require 'isaacsdescent.actors.misc'
 local util = require 'isaacsdescent.util'
 local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 
@@ -15,6 +16,38 @@ local Player = Class{
 
     is_player = true,
 }
+
+function Player:init(...)
+    actors_base.MobileActor.init(self, ...)
+
+    -- TODO not sure how i feel about having player state attached to the
+    -- actor, but it /does/ make sense, and it's certainly an improvement over
+    -- a global
+    -- TODO BUT either way, this needs to be initialized at the start of the
+    -- game and correctly restored on map load
+    self.inventory = {}
+    table.insert(self.inventory, {
+        -- TODO i feel like this should be a real type, or perhaps attached to
+        -- an actor somehow, but i don't want you to have real actual actors in
+        -- your inventory.  i suppose you could just have a count of actor
+        -- /types/, which i think is how zdoom works?
+        -- TODO sprite = ...
+        on_inventory_use = function(self, activator)
+            if activator.savepoint then
+                -- TODO seems like a good place to use :die()
+                worldscene:remove_actor(activator.savepoint)
+                activator.savepoint = nil
+            end
+
+            local savepoint = actors_misc.Savepoint(
+                -- TODO this constant is /totally/ arbitrary, hmm
+                activator.pos + Vector(0, -16))
+            worldscene:add_actor(savepoint)
+            activator.savepoint = savepoint
+        end,
+    })
+
+end
 
 function Player:update(dt)
     if self.is_dead then
@@ -90,11 +123,24 @@ function Player:update(dt)
         end
     end
 
-    if self.touching_mechanism and love.keyboard.isDown('e') then
+    -- Apply other actions
+    -- TODO is there a compelling reason i'm doing this after movement, rather
+    -- than before?
+    -- TODO this is, ah, clumsy.  perhaps i should use the keypressed hook after all.
+    -- TODO also it triggers on reload lol.
+    local is_e_pressed = love.keyboard.isDown('e')
+    local is_e_tapped = is_e_pressed and not self.was_e_pressed
+    self.was_e_pressed = is_e_pressed
+    if is_e_tapped then
         -- TODO this seems like the sort of thing that should, maybe, be
         -- scheduled as an event so it runs at a consistent time and isn't part
         -- of the update loop?  is there any good reason for that?
-        self.touching_mechanism:on_use(self)
+        if self.touching_mechanism then
+            self.touching_mechanism:on_use(self)
+        else
+            -- TODO need to track currently-selected inventory item
+            self.inventory[1]:on_inventory_use(self)
+        end
     end
 end
 
@@ -129,6 +175,12 @@ function Player:die()
         -- TODO oh, it gets better: switch gamestate during an update means draw
         -- doesn't run this cycle, so you get a single black frame
         Gamestate.switch(DeadScene(Gamestate.current()))
+    end
+end
+
+function Player:resurrect()
+    if self.is_dead then
+        self.is_dead = false
     end
 end
 

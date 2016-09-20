@@ -81,7 +81,8 @@ function WorldScene:load_map(map)
     -- what happens if an actor's shape changes?
     self.shape_to_actor = {}
 
-    self:add_actor(Player(Vector(1 * map.tilewidth, 8 * map.tileheight)))
+    self.player = Player(Vector(1 * map.tilewidth, 8 * map.tileheight))
+    self:add_actor(self.player)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
     for _, template in ipairs(map.actor_templates) do
@@ -101,6 +102,24 @@ function WorldScene:add_actor(actor)
 
     -- TODO again, yeah, what happens if the shape changes?
     self.shape_to_actor[actor.shape] = actor
+end
+
+function WorldScene:remove_actor(actor)
+    -- TODO what if the actor is the player...?  should we unset self.player?
+
+    -- TODO maybe an index would be useful
+    for i, an_actor in ipairs(self.actors) do
+        if actor == an_actor then
+            local last = #self.actors
+            self.actors[i] = self.actors[last]
+            self.actors[last] = nil
+            break
+        end
+    end
+
+    self.collider:remove(actor.shape)
+
+    self.shape_to_actor[actor.shape] = nil
 end
 
 

@@ -67,6 +67,12 @@ end
 function Actor:on_collide(actor, direction)
 end
 
+-- General API stuff for controlling actors from outside
+
+function Actor:move_to(position)
+    self.pos = position
+end
+
 
 -- Base class for an actor that's subject to standard physics.  Generally
 -- something that makes conscious decisions, like a player or monster
@@ -248,6 +254,12 @@ end
 
 function MobileActor:blocks(actor, d)
     return true
+end
+
+function MobileActor:move_to(position)
+    Actor.move_to(self, position)
+
+    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
 end
 
 

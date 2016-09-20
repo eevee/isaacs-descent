@@ -1,5 +1,6 @@
 local Class = require 'vendor.hump.class'
 local Gamestate = require 'vendor.hump.gamestate'
+local Vector = require 'vendor.hump.vector'
 
 local BaseScene = require 'isaacsdescent.scenes.base'
 
@@ -18,10 +19,21 @@ end
 function DeadScene:update(dt)
     -- TODO really, this should load some kind of more formal saved game
     -- TODO also i question this choice of key, and it should only work if it wasn't held down the previous frame...
-    if love.keyboard.isDown('e') then
+    if love.keyboard.isDown('r') then
         self.wrapped:reload_map()
         Gamestate.switch(self.wrapped)
         return
+    elseif love.keyboard.isDown('e') then
+        -- TODO this seems really invasive!
+        local player = self.wrapped.player
+        if player.savepoint then
+            -- TODO shouldn't this logic be in the staff or the savepoint somehow?
+            -- TODO eugh this magic constant
+            player:move_to(player.savepoint.pos + Vector(0, 16))
+            player:resurrect()
+            Gamestate.switch(self.wrapped)
+            return
+        end
     end
 
     self.wrapped:update(dt)
