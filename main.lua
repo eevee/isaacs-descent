@@ -10,6 +10,8 @@ local ResourceManager = require 'isaacsdescent.resources'
 local WorldScene = require 'isaacsdescent.scenes.world'
 local TiledMap = require 'isaacsdescent.tiledmap'
 
+local DialogueScene = require 'isaacsdescent.scenes.dialogue'
+
 
 game = {
     sprites = {},
@@ -66,6 +68,7 @@ SpriteInstance = Class{}
 
 function SpriteInstance:init(sprite)
     self.sprite = sprite
+    self.scale = 1
     self.pose = nil
     self.anim = nil
     self:set_pose(sprite.default_pose)
@@ -80,6 +83,10 @@ function SpriteInstance:set_pose(pose)
     self.anim = self.sprite.poses[pose]:clone()
 end
 
+function SpriteInstance:set_scale(scale)
+    self.scale = scale
+end
+
 function SpriteInstance:update(dt)
     self.anim:update(dt)
 end
@@ -87,7 +94,7 @@ end
 function SpriteInstance:draw_at(point)
     -- TODO hm, how do i auto-batch?  shame there's nothing for doing that
     -- built in?  seems an obvious thing
-    self.anim:draw(self.sprite.image, point:unpack())
+    self.anim:draw(self.sprite.image, point.x, point.y, 0, self.scale, self.scale)
 end
 
 
@@ -115,6 +122,23 @@ function love.load(arg)
     game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.savepoint:add_pose('default', {9, 2}, 1, 'pauseAtEnd')
 
+    dialogue_spritesheet = love.graphics.newImage('assets/images/dialogue.png')
+    game.sprites.isaac_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
+    game.sprites.isaac_dialogue:add_pose('default', {2, 1}, 1, 'pauseAtEnd')
+    game.sprites.isaac_dialogue:add_pose('default/talk', {"2-3", 1}, 0.25)
+    game.sprites.lexy_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
+    game.sprites.lexy_dialogue:add_pose('default', {1, 1}, 1, 'pauseAtEnd')
+    game.sprites.lexy_dialogue:add_pose('default/talk', {1, 1, 4, 1}, 0.25)
+    game.sprites.lexy_dialogue:add_pose('yeahsure', {6, 1}, 1, 'pauseAtEnd')
+    game.sprites.lexy_dialogue:add_pose('yeahsure/talk', {6, 1, 5, 1}, 0.25)
+
+    dialogueboximg = love.graphics.newImage('assets/images/isaac-dialogue.png')
+    dialogueboximg2 = love.graphics.newImage('assets/images/lexy-dialogue.png')
+    local fontscale = 2
+    m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
+    m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
+    love.graphics.setFont(m5x7)
+
     local resource_manager = ResourceManager()
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
@@ -125,93 +149,10 @@ function love.load(arg)
 
     Gamestate.registerEvents()
     Gamestate.switch(worldscene)
-
-    dialogueboximg = love.graphics.newImage('assets/images/isaac-dialogue.png')
-    local fontscale = 2
-    m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
-    m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
-    love.graphics.setFont(m5x7)
+    --local tmpscene = DialogueScene(worldscene)
+    --Gamestate.switch(tmpscene)
 end
 
 function love.draw()
     love.graphics.print(tostring(love.timer.getFPS( )), 10, 10)
-end
-
---------------------------------------------------------------------------------
-
-local dialogue_state
-function tmp_draw_dialogue()
-    if not dialogue_state then
-        dialogue_state = {
-            progress = 0,
-            time_passed = 0,
-            total_time = 2,
-            curline = 1,
-            curchar = 0,
-            done = false,
-        }
-        -- TODO æons  :(
-        local full_text = "I would wager no one has set foot in these caves in eons.  It's a miracle any of these mechanisms still work."
-        local _textwidth
-        local wraplimit = love.graphics.getWidth() - 20 * 2
-        _textwidth, dialogue_state.text_lines = m5x7:getWrap(full_text, wraplimit)
-    end
-    local dt = 1/60
-    dialogue_state.time_passed = dialogue_state.time_passed + dt
-
-    while not dialogue_state.done do
-        dialogue_state.curchar = dialogue_state.curchar + 1
-        if dialogue_state.curchar > string.len(dialogue_state.text_lines[dialogue_state.curline]) then
-            if dialogue_state.curline == #dialogue_state.text_lines then
-                dialogue_state.done = true
-            else
-                dialogue_state.curline = dialogue_state.curline + 1
-                dialogue_state.curchar = 0
-            end
-            break
-        end
-        if string.sub(dialogue_state.text_lines[dialogue_state.curline], dialogue_state.curchar, dialogue_state.curchar) ~= " " then
-            break
-        end
-    end
-
-
-    love.graphics.setColor(0, 0, 0, 128)
-    love.graphics.rectangle('fill', 0, 0, love.graphics.getDimensions())
-    love.graphics.setColor(255, 255, 255)
-
-    local boxheight = 160
-    local boxwidth = love.graphics.getWidth()
-    local boxtop = love.graphics.getHeight() - boxheight
-
-    local boxrepeatleft, boxrepeatright = 192, 224
-    local boxquadl = love.graphics.newQuad(0, 0, boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
-    love.graphics.draw(dialogueboximg, boxquadl, 0, boxtop, 0, 2)
-    local boxquadm = love.graphics.newQuad(boxrepeatleft, 0, boxrepeatright - boxrepeatleft, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
-    love.graphics.draw(dialogueboximg, boxquadm, boxrepeatleft * 2, boxtop, 0, math.floor(love.graphics.getWidth() / (boxrepeatright - boxrepeatleft)) + 1, 2)
-    local boxquadr = love.graphics.newQuad(boxrepeatright, 0, dialogueboximg:getWidth() - boxrepeatright, dialogueboximg:getHeight(), dialogueboximg:getDimensions())
-    love.graphics.draw(dialogueboximg, boxquadr, love.graphics.getWidth() - (dialogueboximg:getWidth() - boxrepeatright) * 2, boxtop, 0, 2)
-
-
-    local joinedtext = ""
-    for line = 1, dialogue_state.curline do
-         if line == dialogue_state.curline then
-            joinedtext = joinedtext .. string.sub(dialogue_state.text_lines[line], 1, dialogue_state.curchar)
-        else
-            joinedtext = joinedtext .. dialogue_state.text_lines[line] .. "\n"
-        end
-    end
-    local text = love.graphics.newText(m5x7, joinedtext)
-    love.graphics.setColor(0, 0, 0, 128)
-    love.graphics.draw(text, 32 - 2, boxtop + 32 + 2)
-    love.graphics.setColor(255, 255, 255)
-    love.graphics.draw(text, 32, boxtop + 32)
-
-    local offset = 64
-    if not dialogue_state.done and math.mod(dialogue_state.time_passed, 0.8) > 0.4 then
-        offset = 128
-    end
-    local quad = love.graphics.newQuad(offset, 416, 64, 96, p8_spritesheet:getWidth(), p8_spritesheet:getHeight())
-    local scale = 4
-    love.graphics.draw(p8_spritesheet, quad, 32 + 64 * scale, boxtop - 96 * scale, 0, -scale, scale)
 end
