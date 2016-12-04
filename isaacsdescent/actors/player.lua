@@ -93,6 +93,7 @@ function Player:update(dt)
             ]]
             self.jumptime = self.jumptime + dt
             self.on_ground = false
+            pose = 'jump'
         end
     elseif self.on_ground then
         self.jumptime = 0
@@ -101,6 +102,11 @@ function Player:update(dt)
     end
 
     -- Update pose depending on movement
+    if self.velocity.y < 0 then
+        pose = 'jump'
+    elseif self.velocity.y > 0 then
+        pose = 'fall'
+    end
     -- TODO how do these work for things that aren't players?
     if self.facing_left then
         pose = pose .. '/left'

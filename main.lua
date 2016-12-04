@@ -5,7 +5,6 @@ local Class = require 'vendor.hump.class'
 local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 
-local Player = require 'isaacsdescent.actors.player'
 local ResourceManager = require 'isaacsdescent.resources'
 local WorldScene = require 'isaacsdescent.scenes.world'
 local TiledMap = require 'isaacsdescent.tiledmap'
@@ -110,6 +109,8 @@ function love.load(arg)
     game.sprites.isaac = Sprite(character_sheet, TILE_SIZE, TILE_SIZE * 2, 32, 32)
     game.sprites.isaac:add_pose('stand', {1, 1}, 0.05, 'pauseAtEnd')
     game.sprites.isaac:add_pose('walk', {'2-9', 1}, 0.1)
+    game.sprites.isaac:add_pose('fall', {'10-11', 1}, 0.1)
+    game.sprites.isaac:add_pose('jump', {'12-13', 1}, 0.05, 'pauseAtEnd')
 
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
@@ -120,7 +121,7 @@ function love.load(arg)
     game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
     game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.savepoint:add_pose('default', {9, 2}, 1, 'pauseAtEnd')
+    game.sprites.savepoint:add_pose('default', {'9-15', 2}, {1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1})
 
     dialogue_spritesheet = love.graphics.newImage('assets/images/dialogue.png')
     game.sprites.isaac_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
