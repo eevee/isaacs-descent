@@ -26,10 +26,10 @@ function DeadScene:update(dt)
     elseif love.keyboard.isDown('e') then
         -- TODO this seems really invasive!
         local player = self.wrapped.player
-        if player.savepoint then
+        if player.ptrs.savepoint then
             -- TODO shouldn't this logic be in the staff or the savepoint somehow?
             -- TODO eugh this magic constant
-            player:move_to(player.savepoint.pos + Vector(0, 16))
+            player:move_to(player.ptrs.savepoint.pos + Vector(0, 16))
             player:resurrect()
             Gamestate.switch(self.wrapped)
             return

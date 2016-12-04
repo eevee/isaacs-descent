@@ -20,6 +20,10 @@ local Player = Class{
 function Player:init(...)
     actors_base.MobileActor.init(self, ...)
 
+    -- Table of weak references to other actors.
+    -- TODO possibly of use to all actors?
+    self.ptrs = setmetatable({}, { __mode = 'v' })
+
     -- TODO not sure how i feel about having player state attached to the
     -- actor, but it /does/ make sense, and it's certainly an improvement over
     -- a global
@@ -33,17 +37,17 @@ function Player:init(...)
         -- /types/, which i think is how zdoom works?
         -- TODO sprite = ...
         on_inventory_use = function(self, activator)
-            if activator.savepoint then
+            if activator.ptrs.savepoint then
                 -- TODO seems like a good place to use :die()
-                worldscene:remove_actor(activator.savepoint)
-                activator.savepoint = nil
+                worldscene:remove_actor(activator.ptrs.savepoint)
+                activator.ptrs.savepoint = nil
             end
 
             local savepoint = actors_misc.Savepoint(
                 -- TODO this constant is /totally/ arbitrary, hmm
                 activator.pos + Vector(0, -16))
             worldscene:add_actor(savepoint)
-            activator.savepoint = savepoint
+            activator.ptrs.savepoint = savepoint
         end,
     })
 
@@ -127,6 +131,13 @@ function Player:update(dt)
             self.touching_mechanism = actor
             break
         end
+    end
+
+    -- TODO this is stupid but i want a real exit door anyway
+    -- TODO also it should fire an event or something
+    local _, _, x1, _ = self.shape:bbox()
+    if x1 >= worldscene.map.width then
+        self.__EXIT = true
     end
 
     -- Apply other actions

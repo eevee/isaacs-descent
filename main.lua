@@ -144,7 +144,24 @@ function love.load(arg)
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
-    map = TiledMap("data/maps/pico8-01.tmx.json", resource_manager)
+
+    game.maps = {
+        'pico8-01.tmx.json',
+        'pico8-02.tmx.json',
+        'pico8-03.tmx.json',
+        'pico8-04.tmx.json',
+        'pico8-05.tmx.json',
+        'pico8-06.tmx.json',
+        'pico8-07.tmx.json',
+        'pico8-08.tmx.json',
+        'pico8-09.tmx.json',
+        'pico8-10.tmx.json',
+        'pico8-11.tmx.json',
+    }
+    -- TODO should maps instead hardcode their next maps?  or should they just
+    -- have a generic "exit" a la doom?
+    game.map_index = 1
+    map = TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
     --map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene(map)
 

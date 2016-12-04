@@ -6,6 +6,8 @@ local Player = require 'isaacsdescent.actors.player'
 local BaseScene = require 'isaacsdescent.scenes.base'
 local whammo = require 'isaacsdescent.whammo'
 
+local TiledMap = require 'isaacsdescent.tiledmap'
+
 -- TODO yeah this sucks
 local actors_lookup = {
     spikes_up = actors_misc.SpikesUp,
@@ -28,12 +30,23 @@ end
 -- hump.gamestate hooks
 
 function WorldScene:update(dt)
+    -- TODO i can't tell if this belongs here.  probably not, since it /should/
+    -- do a fadeout.  maybe on the game object itself?
+    if self.player and self.player.__EXIT then
+        self.player.__EXIT = false
+        game.map_index = game.map_index + 1
+        local map = TiledMap("data/maps/" .. game.maps[game.map_index], game.resource_manager)
+        self:load_map(map)
+    end
+
     for _, actor in ipairs(self.actors) do
         actor:update(dt)
     end
 end
 
 function WorldScene:draw()
+    -- TODO once the camera is set up, consider rigging the map to somehow
+    -- auto-expand to fill the screen?
     self.map:draw(Vector(0, 0))
 
     for _, actor in ipairs(self.actors) do
@@ -81,7 +94,12 @@ function WorldScene:load_map(map)
     -- what happens if an actor's shape changes?
     self.shape_to_actor = {}
 
-    self.player = Player(Vector(1 * map.tilewidth, 8 * map.tileheight))
+    if not self.player then
+        self.player = Player(Vector(1 * map.tilewidth, 8 * map.tileheight))
+    else
+        -- TODO use player start point!
+        self.player:move_to(Vector(1 * map.tilewidth, 8 * map.tileheight))
+    end
     self:add_actor(self.player)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
