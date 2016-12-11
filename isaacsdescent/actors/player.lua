@@ -87,11 +87,9 @@ function Player:update(dt)
             -- Be sure to actually cap the amount of jump time we give
             local jt = math.min(dt, self.max_jumptime - self.jumptime)
             self.velocity.y = self.velocity.y - self.yaccel * jt
-            --[[ TODO
             if self.jumptime == 0 then
-                [sound effect]
+                game.resource_manager:get('assets/sounds/jump.ogg'):play()
             end
-            ]]
             self.jumptime = self.jumptime + dt
             self.on_ground = false
             pose = 'jump'

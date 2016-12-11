@@ -181,6 +181,7 @@ function love.load(arg)
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
+    resource_manager:load('assets/sounds/jump.ogg')
 
     game.maps = {
         'pico8-01.tmx.json',

@@ -23,6 +23,8 @@ end
 
 function ResourceManager:register_default_loaders()
     self:register_loader('png', love.graphics.newImage)
+    self:register_loader('wav', function(filename) return love.audio.newSource(filename, "static") end)
+    self:register_loader('ogg', function(filename) return love.audio.newSource(filename, "static") end)
 end
 
 function ResourceManager:register_loader(ext, loader)
