@@ -213,15 +213,6 @@ function TiledMap:add_to_collider(collider)
         local data = layer.data
         for t = 0, width * height - 1 do
             local gid = data[t + 1]
-            if gid == 34 then
-                -- TODO besides being a dumb ad-hoc hack, this also makes the appearance change when restarting a map.  looks like i need maphash!
-                local r = love.math.random(86, 89)
-                if r ~= 86 then
-                    gid = r
-                    data[t + 1] = gid
-                end
-            end
-
             local tile = self.tiles[gid]
             if tile then
                 local shape = tile.tileset:get_collision(tile.tilesetid)
@@ -240,10 +231,11 @@ function TiledMap:add_to_collider(collider)
 end
 
 -- Draw the whole map
-function TiledMap:draw(origin)
+function TiledMap:draw(layer_name, origin, width, height)
     -- TODO origin unused.  is it in tiles or pixels?
     local tw, th = self.raw.tilewidth, self.raw.tileheight
     for _, layer in pairs(self.raw.layers) do
+        if layer.name == layer_name then
         local x, y = layer.x, layer.y
         local width, height = layer.width, layer.height
         local data = layer.data
@@ -252,6 +244,7 @@ function TiledMap:draw(origin)
             if gid ~= 0 then
                 local tile = self.tiles[gid]
                 local dy, dx = util.divmod(t, width)
+                -- TODO don't draw tiles not on the screen
                 love.graphics.draw(
                     tile.tileset.image,
                     tile.tileset.quads[tile.tilesetid],
@@ -259,6 +252,7 @@ function TiledMap:draw(origin)
                     (x + dx) * tw, (y + dy) * th,
                     0, 1, 1)
             end
+        end
         end
     end
 end

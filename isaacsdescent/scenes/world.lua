@@ -8,6 +8,8 @@ local whammo = require 'isaacsdescent.whammo'
 
 local TiledMap = require 'isaacsdescent.tiledmap'
 
+local CAMERA_MARGIN = 6
+
 -- TODO yeah this sucks
 local actors_lookup = {
     spikes_up = actors_misc.SpikesUp,
@@ -42,16 +44,39 @@ function WorldScene:update(dt)
     for _, actor in ipairs(self.actors) do
         actor:update(dt)
     end
+
+    -- Update camera position
+    -- TODO i miss having a box type
+    if self.player then
+        local focus = self.player.pos
+        local w, h = love.graphics.getDimensions()
+        local mapx, mapy = 0, 0
+        local margin = CAMERA_MARGIN * self.map.tilewidth
+        self.camera.x = math.max(
+            math.min(self.camera.x, math.max(mapx, math.floor(focus.x) - margin)),
+            math.min(self.map.width, math.floor(focus.x) + margin) - w)
+        self.camera.y = math.max(
+            math.min(self.camera.y, math.max(mapy, math.floor(focus.y) - margin)),
+            math.min(self.map.height, math.floor(focus.y) + margin) - h)
+    end
 end
 
 function WorldScene:draw()
+    love.graphics.push()
+    love.graphics.translate(-self.camera.x, -self.camera.y)
+
     -- TODO once the camera is set up, consider rigging the map to somehow
     -- auto-expand to fill the screen?
-    self.map:draw(Vector(0, 0))
+    -- TODO don't really like hardcoding layer names here; maybe a prop
+    self.map:draw('background', self.camera, love.graphics.getDimensions())
 
     for _, actor in ipairs(self.actors) do
         actor:draw(dt)
     end
+
+    self.map:draw('foreground', self.camera, love.graphics.getDimensions())
+
+    love.graphics.pop()
 
     do return end
     for shape in pairs(self.collider.shapes) do
@@ -83,6 +108,7 @@ end
 -- API
 
 function WorldScene:load_map(map)
+    self.camera = Vector(0, 0)
     self.collider = whammo.Collider(4 * map.tilewidth)
     self.map = map
     self.actors = {}
