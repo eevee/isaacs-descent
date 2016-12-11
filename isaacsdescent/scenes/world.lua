@@ -136,6 +136,10 @@ function WorldScene:load_map(map)
 end
 
 function WorldScene:reload_map()
+    if self.player then
+        -- TODO should this be a more general 'reset'?
+        self.player:resurrect()
+    end
     self:load_map(self.map)
 end
 
