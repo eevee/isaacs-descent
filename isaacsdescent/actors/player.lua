@@ -103,7 +103,8 @@ function Player:update(dt)
     end
 
     -- Update pose depending on movement
-    if self.velocity.y < 0 then
+    if self.on_ground then
+    elseif self.velocity.y < 0 then
         pose = 'jump'
     elseif self.velocity.y > 0 then
         pose = 'fall'
