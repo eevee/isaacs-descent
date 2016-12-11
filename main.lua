@@ -69,17 +69,31 @@ function SpriteInstance:init(sprite)
     self.sprite = sprite
     self.scale = 1
     self.pose = nil
+    self._pending_pose = nil
     self.anim = nil
-    self:set_pose(sprite.default_pose)
+    -- TODO this doesn't check that the default pose exists
+    self:_set_pose(sprite.default_pose)
 end
 
+-- Schedule the given pose to replace the current pose on the next update()
+-- call.  (This way, calling set_pose() followed by update() doesn't skip the
+-- first frame of the new pose.)
+-- Changing to the current pose is a no-op.
 function SpriteInstance:set_pose(pose)
     if pose == self.pose then
-        return
+        self._pending_pose = nil
+    else
+        assert(self.sprite.poses[pose], ("No such pose %s"):format(pose))
+        self._pending_pose = pose
     end
-    assert(self.sprite.poses[pose], ("No such pose %s"):format(pose))
+end
+
+function SpriteInstance:_set_pose(pose)
+    -- Internal method that actually changes the pose.  Doesn't check that the
+    -- pose exists.
     self.pose = pose
     self.anim = self.sprite.poses[pose]:clone()
+    self._pending_pose = nil
 end
 
 function SpriteInstance:set_scale(scale)
@@ -87,7 +101,11 @@ function SpriteInstance:set_scale(scale)
 end
 
 function SpriteInstance:update(dt)
-    self.anim:update(dt)
+    if self._pending_pose then
+        self:_set_pose(self._pending_pose)
+    else
+        self.anim:update(dt)
+    end
 end
 
 function SpriteInstance:draw_at(point)
@@ -118,6 +136,7 @@ function love.load(arg)
     game.sprites.spikes_up:add_pose('default', {9, 1}, 1, 'pauseAtEnd')
     game.sprites.wooden_switch = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.wooden_switch:add_pose('default', {9, 4}, 1, 'pauseAtEnd')
+    game.sprites.wooden_switch:add_pose('switched', {10, 4}, 1, 'pauseAtEnd')
     game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
     game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)

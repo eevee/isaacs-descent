@@ -20,10 +20,6 @@ local Player = Class{
 function Player:init(...)
     actors_base.MobileActor.init(self, ...)
 
-    -- Table of weak references to other actors.
-    -- TODO possibly of use to all actors?
-    self.ptrs = setmetatable({}, { __mode = 'v' })
-
     -- TODO not sure how i feel about having player state attached to the
     -- actor, but it /does/ make sense, and it's certainly an improvement over
     -- a global
@@ -56,6 +52,7 @@ end
 function Player:update(dt)
     if self.is_dead then
         -- TODO buuut still gotta update the sprite...
+        self.sprite:update(dt)
         return
     end
 
@@ -117,13 +114,15 @@ function Player:update(dt)
     else
         pose = pose .. '/right'
     end
-    -- TODO hmm, seems a slight shame to call update() when the new pose might clobber that anyway; maybe combine these methods?
-    self.sprite:update(dt)
     self.sprite:set_pose(pose)
 
-    -- Run the base logic to perform movement and collision
-    local hits = self:_do_physics(dt)
+    -- Run the base logic to perform movement, collision, sprite updating, etc.
+    actors_base.MobileActor.update(self, dt)
 
+    -- TODO ugh, this whole block should probably be elsewhere; i need a way to
+    -- check current touches anyway.  would be nice if it could hook into the
+    -- physics system so i don't have to ask twice
+    local hits = self._stupid_hits_hack
     self.touching_mechanism = nil
     for shape in pairs(hits) do
         local actor = worldscene.shape_to_actor[shape]
@@ -164,12 +163,12 @@ end
 function Player:draw()
     actors_base.MobileActor.draw(self)
 
+    do return end
     if self.touching_mechanism then
         love.graphics.setColor(0, 64, 255, 128)
         self.touching_mechanism.shape:draw('fill')
         love.graphics.setColor(255, 255, 255)
     end
-    do return end
     if self.on_ground then
         love.graphics.setColor(255, 0, 0, 128)
     else
@@ -184,6 +183,14 @@ local DeadScene = require 'isaacsdescent.scenes.dead'
 -- TODO should other things also be able to die?
 function Player:die()
     if not self.is_dead then
+        local pose = 'die'
+        -- TODO ARGGGHH
+        if self.facing_left then
+            pose = pose .. '/left'
+        else
+            pose = pose .. '/right'
+        end
+        self.sprite:set_pose(pose)
         self.is_dead = true
         -- TODO LOL THIS WILL NOT FLY but the problem with putting a check in
         -- WorldScene is that it will then explode.  so maybe this should fire an
@@ -198,6 +205,10 @@ end
 function Player:resurrect()
     if self.is_dead then
         self.is_dead = false
+        -- Reset physics
+        self.velocity = Vector(0, 0)
+        self.jumptime = self.max_jumptime
+        self.on_ground = false  -- TODO this one's always tricky
     end
 end
 

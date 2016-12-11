@@ -31,6 +31,9 @@ function Actor:init(position)
     self.pos = position
     self.velocity = Vector.zero:clone()
 
+    -- Table of weak references to other actors
+    self.ptrs = setmetatable({}, { __mode = 'v' })
+
     self.shape = self.shape:clone()
     -- TODO arrgh, this global.  sometimes i just need access to the game.
     -- should this be done on enter, maybe?
@@ -45,8 +48,7 @@ end
 
 -- Called once per update frame; any state changes should go here
 function Actor:update(dt)
-    -- TODO this should update the sprite!!  but i don't know how to make that
-    -- work with set_pose yet
+    self.sprite:update(dt)
 end
 
 -- Draw the actor
@@ -249,10 +251,12 @@ function MobileActor:_do_physics(dt)
 end
 
 function MobileActor:update(dt)
+    Actor.update(self, dt)
+
     -- TODO i don't think this is going to work, since the base class's
     -- update() eventually needs to be called to make sure we're updating the
     -- sprite too
-    self:_do_physics(dt)
+    self._stupid_hits_hack = self:_do_physics(dt)
 end
 
 function MobileActor:blocks(actor, d)

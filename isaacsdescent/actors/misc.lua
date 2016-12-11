@@ -52,7 +52,7 @@ end
 
 function WoodenSwitch:on_use(activator)
     -- TODO sfx(4)
-    -- TODO self:set_pose"switched"
+    self.sprite:set_pose('switched/right')
     self.is_usable = false
 
     -- TODO probably wants a real API
