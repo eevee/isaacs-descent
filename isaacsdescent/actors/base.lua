@@ -98,11 +98,14 @@ local MobileActor = Class{
     max_slope = Vector(1, 1),
 
     -- Active physics parameters
-    xaccel = 0.125 * PICO8A,
+    -- TODO these are a little goofy because friction works differently; may be
+    -- worth looking at that again.  also note that the player can currently
+    -- LAUNCH themselves off an upwards slope, to a ridiculous height
+    xaccel = 0.125 * PICO8A * 0.75,
     max_jumptime = 4 / 30,
     -- determined experimentally
     -- to make max jump 2 tiles
-    yaccel = (7/64 + 1/16) * PICO8A,
+    yaccel = (7/64) * PICO8A,
     -- multiplied by xaccel while
     -- airborne
     aircontrol = 0.5,
@@ -113,7 +116,7 @@ local MobileActor = Class{
 
 -- TODO these are a property of the world and should go on the world object
 -- once one exists
-local gravity = Vector(0, 1/16 * PICO8A)
+local gravity = Vector(0, 1/32 * PICO8A)
 local terminal_velocity = 7/8 * PICO8V
 
 function MobileActor:_do_physics(dt)
