@@ -184,6 +184,14 @@ local DeadScene = require 'isaacsdescent.scenes.dead'
 -- TODO should other things also be able to die?
 function Player:die()
     if not self.is_dead then
+        local pose = 'die'
+        -- TODO ARGGGHH
+        if self.facing_left then
+            pose = pose .. '/left'
+        else
+            pose = pose .. '/right'
+        end
+        self.sprite:set_pose(pose)
         self.is_dead = true
         -- TODO LOL THIS WILL NOT FLY but the problem with putting a check in
         -- WorldScene is that it will then explode.  so maybe this should fire an

@@ -122,13 +122,14 @@ function love.load(arg)
 
     -- Load all the graphics upfront
     -- TODO i wouldn't mind having this defined in some json
-    local character_sheet = love.graphics.newImage('assets/images/player.png')
+    local character_sheet = love.graphics.newImage('assets/images/isaac.png')
     -- TODO istm i'll end up repeating this bit a lot
-    game.sprites.isaac = Sprite(character_sheet, TILE_SIZE, TILE_SIZE * 2, 32, 32)
+    game.sprites.isaac = Sprite(character_sheet, TILE_SIZE, TILE_SIZE * 2, 0, 0)
     game.sprites.isaac:add_pose('stand', {1, 1}, 0.05, 'pauseAtEnd')
     game.sprites.isaac:add_pose('walk', {'2-9', 1}, 0.1)
     game.sprites.isaac:add_pose('fall', {'10-11', 1}, 0.1)
     game.sprites.isaac:add_pose('jump', {'12-13', 1}, 0.05, 'pauseAtEnd')
+    game.sprites.isaac:add_pose('die', {'14-18', 1}, 0.1, 'pauseAtEnd')
 
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
