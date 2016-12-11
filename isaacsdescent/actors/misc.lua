@@ -24,8 +24,8 @@ end
 
 function SpikesUp:on_collide(other, direction)
     if other.is_player then
-	-- TODO i feel that damage should be dealt in a more roundabout way?
-	other:die()
+        -- TODO i feel that damage should be dealt in a more roundabout way?
+        other:die()
     end
 end
 
@@ -58,9 +58,9 @@ function WoodenSwitch:on_use(activator)
     -- TODO probably wants a real API
     -- TODO worldscene is a global...
     for _, actor in ipairs(worldscene.actors) do
-	-- TODO would be nice if this could pick more specific targets, not just the entire map
+        -- TODO would be nice if this could pick more specific targets, not just the entire map
         if actor.on_activate then
-	    actor:on_activate()
+            actor:on_activate()
         end
     end
 end
@@ -103,21 +103,21 @@ end
 function MagicalBridge:update(dt)
     -- TODO decoractor.update(self)
     if self.enabled and self.timer > 0 then
-	-- TODO redo this with hump's tweens
-	self.timer = self.timer - dt
+        -- TODO redo this with hump's tweens
+        self.timer = self.timer - dt
     end
 end
 
 function MagicalBridge:draw()
     if self.enabled then
-	if self.timer > 0 then
-	    local alpha = (1 - self.timer / 0.8) * 255
-	    love.graphics.setColor(255, 255, 255, alpha)
-	    self.sprite:draw_at(self.pos)
-	    love.graphics.setColor(255, 255, 255)
-	else
-	    self.sprite:draw_at(self.pos)
-	end
+        if self.timer > 0 then
+            local alpha = (1 - self.timer / 0.8) * 255
+            love.graphics.setColor(255, 255, 255, alpha)
+            self.sprite:draw_at(self.pos)
+            love.graphics.setColor(255, 255, 255)
+        else
+            self.sprite:draw_at(self.pos)
+        end
     end
 end
 
