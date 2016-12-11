@@ -9,10 +9,6 @@
  "tileheight":32,
  "tileproperties":
     {
-     "8":
-        {
-         "actor":"spikes_up"
-        },
      "42":
         {
          "actor":"magical_bridge"
@@ -20,14 +16,18 @@
      "56":
         {
          "actor":"wooden_switch"
+        },
+     "58":
+        {
+         "actor":"laser_eye"
+        },
+     "8":
+        {
+         "actor":"spikes_up"
         }
     },
  "tilepropertytypes":
     {
-     "8":
-        {
-         "actor":"string"
-        },
      "42":
         {
          "actor":"string"
@@ -35,10 +35,126 @@
      "56":
         {
          "actor":"string"
+        },
+     "58":
+        {
+         "actor":"string"
+        },
+     "8":
+        {
+         "actor":"string"
         }
     },
  "tiles":
     {
+     "164":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "165":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":2,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "180":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "181":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
      "32":
         {
          "objectgroup":

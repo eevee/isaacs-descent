@@ -132,9 +132,142 @@ local Savepoint = Class{
 }
 
 
+local Laser = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'laser_vert',
+    fullbright = true,
+    anchor = Vector(16, 0),
+    shape = whammo_shapes.Box(14, 0, 4, 32),
+}
+
+function Laser:init(pos)
+    actors_base.Actor.init(self, pos)
+    -- TODO check collision going downwards
+    --[[
+    local bottom = pos:clone()
+    while bottom.y < worldscene.map.height do
+        bottom.y = bottom.y + 1
+        local tile = curzone:tile(bottom)
+        if tile:blocks(self) then
+            break
+        end
+    end
+    ]]
+    -- TODO this involves some kerjiggering
+    --[[
+    self.shape = whammo_shapes.Box(
+        0.375, 0, 0.25, bottom.y - pos.y)
+    ]]
+end
+
+function Laser:update(dt)
+    actors_base.Actor.update(self, dt)
+    --local coll = self:coll()
+    -- TODO particles don't exist yet oops
+    --[[
+    if curtime % 10 == 0 then
+        local ang = rnd() * 0.5
+        curzone:add_actor(particle(
+            vec2(coll.l, coll.b), 8, 8,
+            vec2(cos(ang), sin(ang)) * 0.125))
+    end
+    ]]
+    -- TODO (a) no way to check for arbitrary collision at the moment
+    -- TODO (b) surely this should be an oncollide -- the problem is that it
+    -- doesn't count as a collision if the laser moves onto the player
+    --[[
+    if coll:overlaps(player:coll()) then
+        player:die()
+    end
+    ]]
+end
+
+-- TODO custom drawing too
+--[[
+draw = function(self)
+    local coll = self:coll()
+    rectfill(coll.l * 8, coll.t * 8, coll.r * 8 - 1, coll.b * 8 - 1, 8)
+end,
+]]
+
+
+-- TODO this should probably have a cute canon name
+local LaserEye = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'laser_eye',
+    anchor = Vector(16, 16),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+
+    sensor_range = 64,
+
+    sleep_timer = 0,
+}
+
+function LaserEye:reset()
+    self:sleep()
+end
+
+function LaserEye:sleep()
+    self.sleep_timer = 0
+    self.sprite:set_pose('default/right')
+    if self.laser then
+        curzone:del_actor(self.laser)
+        self.laser = nil
+    end
+end
+function LaserEye:update(dt)
+    -- TODO really, really want a bounding box type
+    local px0, py0, px1, py1 = worldscene.player.shape:bbox()
+    local sx0, sy0, sx1, sy1 = self.shape:bbox()
+    local dist
+    if sx1 < px0 then
+        dist = px0 - sx1
+    else
+        dist = sx0 - px1
+    end
+    if dist < self.sensor_range then
+        self.sprite:set_pose('awake/right')
+        self.sleep_timer = 4
+        if not self.ptrs.laser then
+            local laser = Laser(self.pos + Vector(0, 32))
+            self.ptrs.laser = laser
+            worldscene:add_actor(laser)
+        end
+    elseif self.sleep_timer > 0 then
+        self.sleep_timer = self.sleep_timer - dt
+        if self.sleep_timer <= 0 then
+            self:sleep()
+        end
+    end
+    actors_base.Actor.update(self, dt)
+-- TODO movement
+--[[
+    if self.pose == "awake" then
+        local dx = 0.125
+        local d0 = self.pos.x - self.pos0.x
+        if d0 > 4 then
+            self.reverse = true
+        elseif d0 < -4 then
+            self.reverse = false
+        end
+        if self.reverse then
+            dx *= -1
+        end
+        self.pos.x += dx
+        if self.laser then
+            self.laser.pos.x += dx
+        end
+    end
+]]
+end
+
+
 return {
     SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,
     Savepoint = Savepoint,
+    LaserEye = LaserEye,
 }

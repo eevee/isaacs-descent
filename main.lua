@@ -141,7 +141,24 @@ function love.load(arg)
     game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
     game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.savepoint:add_pose('default', {'9-15', 2}, {1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1})
+    game.sprites.savepoint:add_pose(
+        'default', {'3-15', 2},
+        {
+            -- Initial appearance: 6 frames
+            0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+            -- Default sprite
+            2.5,
+            -- Shimmer: 6 frames
+            0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        },
+        function(anim) anim:gotoFrame(7) end
+    )
+    game.sprites.laser_eye = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.laser_eye:add_pose('default', {11, 4}, 1, 'pauseAtEnd')
+    game.sprites.laser_eye:add_pose('awake', {12, 4}, 1, 'pauseAtEnd')
+    game.sprites.laser_vert = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.laser_vert:add_pose('default', {11, 5}, 1, 'pauseAtEnd')
+    game.sprites.laser_vert:add_pose('end', {12, 5}, 1, 'pauseAtEnd')
 
     dialogue_spritesheet = love.graphics.newImage('assets/images/dialogue.png')
     game.sprites.isaac_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)

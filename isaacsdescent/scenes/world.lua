@@ -15,6 +15,7 @@ local actors_lookup = {
     spikes_up = actors_misc.SpikesUp,
     magical_bridge = actors_misc.MagicalBridge,
     wooden_switch = actors_misc.WoodenSwitch,
+    laser_eye = actors_misc.LaserEye,
 }
 
 local WorldScene = Class{
