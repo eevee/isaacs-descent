@@ -82,25 +82,27 @@ function Player:update(dt)
     end
 
     -- Jumping
+    -- This uses the Sonic approach: pressing jump immediately sets (not
+    -- increases!) the player's y velocity, and releasing jump lowers the y
+    -- velocity to a threshold
     if love.keyboard.isDown('space') then
-        if self.jumptime < self.max_jumptime then
-            -- Be sure to actually cap the amount of jump time we give
-            local jt = math.min(dt, self.max_jumptime - self.jumptime)
-            self.velocity.y = self.velocity.y - self.yaccel * jt
-            if self.jumptime == 0 then
+        if self.on_ground then
+            if self.velocity.y > -self.jumpvel then
+                self.velocity.y = -self.jumpvel
+                self.on_ground = false
                 game.resource_manager:get('assets/sounds/jump.ogg'):play()
             end
-            self.jumptime = self.jumptime + dt
-            self.on_ground = false
-            pose = 'jump'
         end
-    elseif self.on_ground then
-        self.jumptime = 0
     else
-        self.jumptime = self.max_jumptime
+        if not self.on_ground then
+            self.velocity.y = math.max(self.velocity.y, -self.jumpvel * self.jumpcap)
+        end
     end
 
-    -- Update pose depending on movement
+    -- Run the base logic to perform movement, collision, sprite updating, etc.
+    actors_base.MobileActor.update(self, dt)
+
+    -- Update pose depending on actual movement
     if self.on_ground then
     elseif self.velocity.y < 0 then
         pose = 'jump'
@@ -114,9 +116,6 @@ function Player:update(dt)
         pose = pose .. '/right'
     end
     self.sprite:set_pose(pose)
-
-    -- Run the base logic to perform movement, collision, sprite updating, etc.
-    actors_base.MobileActor.update(self, dt)
 
     -- TODO ugh, this whole block should probably be elsewhere; i need a way to
     -- check current touches anyway.  would be nice if it could hook into the
@@ -206,7 +205,6 @@ function Player:resurrect()
         self.is_dead = false
         -- Reset physics
         self.velocity = Vector(0, 0)
-        self.jumptime = self.max_jumptime
         self.on_ground = false  -- TODO this one's always tricky
     end
 end

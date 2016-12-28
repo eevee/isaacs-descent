@@ -85,6 +85,12 @@ end
 local TILE_SIZE = 32
 local PICO8V = TILE_SIZE / (1/30)
 local PICO8A = TILE_SIZE / (1/30) / (1/30)
+
+-- TODO these are a property of the world and should go on the world object
+-- once one exists
+local gravity = Vector(0, 1/32 * PICO8A)
+local terminal_velocity = 7/8 * PICO8V
+
 local MobileActor = Class{
     __includes = Actor,
 
@@ -101,13 +107,12 @@ local MobileActor = Class{
 
     -- Active physics parameters
     -- TODO these are a little goofy because friction works differently; may be
-    -- worth looking at that again.  also note that the player can currently
-    -- LAUNCH themselves off an upwards slope, to a ridiculous height
+    -- worth looking at that again.
     xaccel = 0.125 * PICO8A * 0.75,
-    max_jumptime = 4 / 30,
-    -- determined experimentally
-    -- to make max jump 2 tiles
-    yaccel = (7/64) * PICO8A,
+    -- Max height of a projectile = vy² / (2g), so vy = √2gh
+    -- Pick a jump velocity that gets us up 2 tiles, plus a margin of error
+    jumpvel = math.sqrt(2 * gravity.y * (TILE_SIZE * 2.25)),
+    jumpcap = 0.25,
     -- multiplied by xaccel while
     -- airborne
     aircontrol = 0.5,
@@ -115,11 +120,6 @@ local MobileActor = Class{
     -- Physics state
     on_ground = false,
 }
-
--- TODO these are a property of the world and should go on the world object
--- once one exists
-local gravity = Vector(0, 1/32 * PICO8A)
-local terminal_velocity = 7/8 * PICO8V
 
 function MobileActor:_do_physics(dt)
     -- Passive adjustments
@@ -213,7 +213,7 @@ function MobileActor:_do_physics(dt)
             -- Nearest axis points away from our movement, so we have to stop
             self.velocity = Vector.zero:clone()
         else
-        --print("axis", axis, "dot product", self.velocity * axis)
+            --print("axis", axis, "dot product", self.velocity * axis)
             -- Nearest axis is within a quarter-turn, so slide that direction
             self.velocity = self.velocity:projectOn(axis)
         end
@@ -224,6 +224,7 @@ function MobileActor:_do_physics(dt)
     -- Ground test: from where we are, are we allowed to move straight down?
     -- TODO pretty sure this won't work if the slope points the other way
     -- TODO i really want to replace clocks with just normals
+    -- TODO projecting velocity onto the direction of the ground makes us climb slopes more slowly!  feels nice
     if last_clock then
         self.last_slide = last_clock:closest_extreme(gravity)
     else
