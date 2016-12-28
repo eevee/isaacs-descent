@@ -226,7 +226,6 @@ function MobileActor:_do_physics(dt)
     --print("movement", movement, "movement0", movement0)
 
     -- Ground test: from where we are, are we allowed to move straight down?
-    -- TODO pretty sure this won't work if the slope points the other way
     -- TODO i really want to replace clocks with just normals
     -- TODO projecting velocity onto the direction of the ground makes us climb slopes more slowly!  feels nice
     if last_clock then
@@ -234,8 +233,11 @@ function MobileActor:_do_physics(dt)
     else
         self.last_slide = nil
     end
-    local blocked_clock = last_clock:inverted()
-    self.on_ground = blocked_clock:includes(self.max_slope)
+    -- We are on the ground iff our max standable slope is closer to gravity
+    -- (i.e. steeper) than our downwards slide angle, plus a fuzz factor
+    self.on_ground = (self.last_slide and
+        self.last_slide:normalized() * gravity
+        - self.max_slope:normalized() * gravity <= 1e-8)
 
     self.pos = self.pos + movement
     --print("FINAL POSITION:", self.pos)
