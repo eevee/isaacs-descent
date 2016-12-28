@@ -119,14 +119,23 @@ function TiledTileset:get_collision(tileid)
         return whammo_shapes.Polygon(unpack(points))
     end
 
-    return whammo_shapes.Box(
+    local shape = whammo_shapes.Box(
         coll.x, coll.y, coll.width, coll.height)
+
+    -- FIXME this is pretty bad
+    if coll.properties and coll.properties['one-way platform'] then
+        shape._xxx_is_one_way_platform = true
+    end
+
+    return shape
 end
 
 --------------------------------------------------------------------------------
 -- TiledMap
 
-local TiledMap = Class{}
+local TiledMap = Class{
+    player_start = nil,
+}
 
 function TiledMap:init(path, resource_manager)
     self.raw = strict_json_decode(love.filesystem.read(path))
@@ -174,27 +183,36 @@ function TiledMap:init(path, resource_manager)
         -- TODO this is largely copy/pasted from below
         local lx = layer.x * self.tilewidth + (layer.offsetx or 0)
         local ly = layer.y * self.tileheight + (layer.offsety or 0)
+        -- FIXME i think these are deprecated for layers maybe?
         local width, height = layer.width, layer.height
-        local data = layer.data
-        for t = 0, width * height - 1 do
-            local gid = data[t + 1]
-            local tile = self.tiles[gid]
-            -- TODO lol put this in the tileset jesus
-            -- TODO what about the tilepropertytypes
-            if tile then
-                local proptable = tile.tileset.raw.tileproperties
-                if proptable then
-                    local props = proptable[tile.tilesetid]
-                    if props and props.actor then
-                        local ty, tx = util.divmod(t, width)
-                        table.insert(self.actor_templates, {
-                            name = props.actor,
-                            position = Vector(
-                                lx + tx * self.raw.tilewidth,
-                                ly + ty * self.raw.tileheight),
-                        })
-                        data[t + 1] = 0
+        if layer.type == 'tilelayer' then
+            local data = layer.data
+            for t = 0, width * height - 1 do
+                local gid = data[t + 1]
+                local tile = self.tiles[gid]
+                -- TODO lol put this in the tileset jesus
+                -- TODO what about the tilepropertytypes
+                if tile then
+                    local proptable = tile.tileset.raw.tileproperties
+                    if proptable then
+                        local props = proptable[tile.tilesetid]
+                        if props and props.actor then
+                            local ty, tx = util.divmod(t, width)
+                            table.insert(self.actor_templates, {
+                                name = props.actor,
+                                position = Vector(
+                                    lx + tx * self.raw.tilewidth,
+                                    ly + ty * self.raw.tileheight),
+                            })
+                            data[t + 1] = 0
+                        end
                     end
+                end
+            end
+        elseif layer.type == 'objectgroup' then
+            for _, object in ipairs(layer.objects) do
+                if object.type == 'player start' then
+                    self.player_start = Vector(object.x, object.y)
                 end
             end
         end
@@ -207,23 +225,25 @@ function TiledMap:add_to_collider(collider)
     -- not have any state i think.  maybe return a structure of shapes?
     self.shapes = {}
     for _, layer in pairs(self.raw.layers) do
-        local lx = layer.x * self.tilewidth + (layer.offsetx or 0)
-        local ly = layer.y * self.tileheight + (layer.offsety or 0)
-        local width, height = layer.width, layer.height
-        local data = layer.data
-        for t = 0, width * height - 1 do
-            local gid = data[t + 1]
-            local tile = self.tiles[gid]
-            if tile then
-                local shape = tile.tileset:get_collision(tile.tilesetid)
-                if shape then
-                    local ty, tx = util.divmod(t, width)
-                    shape:move(
-                        lx + tx * self.raw.tilewidth,
-                        ly + ty * self.raw.tileheight)
-                    -- TODO this doesn't work -- there are multiple layers!
-                    self.shapes[t] = shape
-                    collider:add(shape)
+        if layer.type == 'tilelayer' then
+            local lx = layer.x * self.tilewidth + (layer.offsetx or 0)
+            local ly = layer.y * self.tileheight + (layer.offsety or 0)
+            local width, height = layer.width, layer.height
+            local data = layer.data
+            for t = 0, width * height - 1 do
+                local gid = data[t + 1]
+                local tile = self.tiles[gid]
+                if tile then
+                    local shape = tile.tileset:get_collision(tile.tilesetid)
+                    if shape then
+                        local ty, tx = util.divmod(t, width)
+                        shape:move(
+                            lx + tx * self.raw.tilewidth,
+                            ly + ty * self.raw.tileheight)
+                        -- TODO this doesn't work -- there are multiple layers!
+                        self.shapes[t] = shape
+                        collider:add(shape)
+                    end
                 end
             end
         end

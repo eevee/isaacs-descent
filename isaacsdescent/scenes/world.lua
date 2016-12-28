@@ -137,18 +137,28 @@ function WorldScene:load_map(map)
     -- what happens if an actor's shape changes?
     self.shape_to_actor = {}
 
+    local player_start = self.map.player_start
+    -- FIXME fix all the maps and then make this fatal
+    if not player_start then
+        print("WARNING: no player start!!")
+        player_start = Vector(1 * map.tilewidth, 5 * map.tileheight)
+    end
     if not self.player then
-        self.player = Player(Vector(1 * map.tilewidth, 8 * map.tileheight))
+        self.player = Player(player_start:clone())
     else
         -- TODO use player start point!
-        self.player:move_to(Vector(1 * map.tilewidth, 8 * map.tileheight))
+        self.player:move_to(player_start:clone())
     end
     self:add_actor(self.player)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
     for _, template in ipairs(map.actor_templates) do
         local class = actors_lookup[template.name]
-        self:add_actor(class(template.position))
+        local position = template.position:clone()
+        if class.anchor then
+            position = position + class.anchor
+        end
+        self:add_actor(class(position))
     end
 end
 

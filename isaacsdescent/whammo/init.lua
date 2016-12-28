@@ -78,6 +78,9 @@ function Collider:slide(shape, dx, dy)
 
             -- Check whether we can move through this object
             local is_passable = false
+            if collision.shape._xxx_is_one_way_platform and attempted.y < 0 then
+                is_passable = true
+            end
             if collision.touchtype < 0 then
                 -- Objects we're overlapping are always passable
                 is_passable = true
