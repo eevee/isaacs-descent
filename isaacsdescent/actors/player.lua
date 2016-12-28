@@ -10,8 +10,8 @@ local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 local Player = Class{
     __includes = actors_base.MobileActor,
 
-    shape = whammo_shapes.Box(8, 16, 20, 48),
-    anchor = Vector(16, 64),
+    shape = whammo_shapes.Box(8, 16, 20, 46),
+    anchor = Vector(19, 62),
     sprite_name = 'isaac',
 
     is_player = true,

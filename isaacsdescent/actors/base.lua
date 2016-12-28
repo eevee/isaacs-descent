@@ -64,6 +64,10 @@ function Actor:blocks(actor, direction)
     return false
 end
 
+-- Called when the actor is added to the world
+function Actor:on_spawn()
+end
+
 -- Called every frame that another actor is touching this one
 -- TODO that seems excessive?
 function Actor:on_collide(actor, direction)

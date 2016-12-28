@@ -1,6 +1,5 @@
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
-local vector_light = require 'vendor.hump.vector-light'
 
 local util = require 'isaacsdescent.util'
 local Blockmap = require 'isaacsdescent.whammo.blockmap'
@@ -25,6 +24,7 @@ end
 
 
 function Collider:slide(shape, dx, dy)
+    --print()
     local attempted = Vector(dx, dy)
     local successful = Vector(0, 0)
     local allhits = {}  -- set of objects we ultimately bump into
@@ -96,8 +96,8 @@ function Collider:slide(shape, dx, dy)
 
             -- If we're hitting the object and it's not passable, stop here
             if not first_collision and not is_passable and collision.touchtype > 0 then
-                --print("< found first collision:", first_collision.move, "len2:", first_collision.len2)
                 first_collision = collision
+                --print("< found first collision:", first_collision.move, "len2:", first_collision.len2)
             end
         end
 
@@ -125,8 +125,10 @@ function Collider:slide(shape, dx, dy)
         if lastclock and first_collision and first_collision.len2 == 0 then
             -- If we don't actually move, then...  this happens...
             -- TODO should this even happen?
+            --print("intersecting last clock with combined clock", lastclock, combined_clock)
             lastclock:intersect(combined_clock)
         else
+            --print("setting last clock", lastclock, combined_clock)
             lastclock = combined_clock
         end
 
@@ -158,8 +160,44 @@ function Collider:slide(shape, dx, dy)
 
     -- Whatever's left over is unopposed
     shape:move(attempted:unpack())
-    debug_hits = allhits
+    --debug_hits = allhits
     return successful + attempted, allhits, lastclock
+end
+
+function Collider:fire_ray(start, direction, collision_check_func)
+    local perp = direction:perpendicular()
+    local startdot = direction * start
+    local startperpdot = perp * start
+    -- TODO this returns EVERY BLOCK along the ray which seems unlikely to be
+    -- useful
+    local nearest, nearestpt = math.huge, nil
+    local neighbors = self.blockmap:neighbors_along_ray(
+        start.x, start.y, direction.x, direction.y)
+    local _hits = {}
+    for neighbor in pairs(neighbors) do
+        -- FIXME shape_to_actor haunts my dreams
+        if not collision_check_func or not collision_check_func(worldscene.shape_to_actor[neighbor]) then
+            -- TODO i can do this by projecting the whole shape onto the ray, i think??  that gives me distance (along the ray, anyway), then i just need to check that it actually hits, somehow.  project onto perpendicular?
+            local min, max, minpt, maxpt = neighbor:project_onto_axis(perp)
+            if min <= startperpdot and startperpdot <= max then
+                --_hits[neighbor] = 1
+                local min, max, minpt, maxpt = neighbor:project_onto_axis(direction)
+                if min > startdot and min < nearest then
+                    _hits = {[neighbor] = 1}
+                    nearest = min
+                    nearestpt = minpt
+                elseif max > startdot and max < nearest then
+                    _hits = {[neighbor] = 1}
+                    nearest = max
+                    nearestpt = maxpt
+                end
+            end
+        end
+    end
+
+    debug_hits = _hits
+
+    return nearestpt, nearest - startdot
 end
 
 return {

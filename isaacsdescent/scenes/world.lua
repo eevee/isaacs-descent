@@ -147,10 +147,14 @@ end
 function WorldScene:add_actor(actor)
     table.insert(self.actors, actor)
 
-    self.collider:add(actor.shape)
+    if actor.shape then
+        self.collider:add(actor.shape)
 
-    -- TODO again, yeah, what happens if the shape changes?
-    self.shape_to_actor[actor.shape] = actor
+        -- TODO again, yeah, what happens if the shape changes?
+        self.shape_to_actor[actor.shape] = actor
+    end
+
+    actor:on_spawn()
 end
 
 function WorldScene:remove_actor(actor)
@@ -166,9 +170,11 @@ function WorldScene:remove_actor(actor)
         end
     end
 
-    self.collider:remove(actor.shape)
+    if actor.shape then
+        self.collider:remove(actor.shape)
 
-    self.shape_to_actor[actor.shape] = nil
+        self.shape_to_actor[actor.shape] = nil
+    end
 end
 
 

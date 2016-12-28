@@ -10,6 +10,10 @@ function Blockmap:init(blocksize)
     self.blocksize = blocksize
     self.blocks = {}
     self.bboxes = setmetatable({}, {__mode = 'k'})
+    self.min_x = math.huge
+    self.max_x = -math.huge
+    self.min_y = math.huge
+    self.max_y = -math.huge
 end
 
 function Blockmap:to_block_units(x, y)
@@ -48,6 +52,11 @@ function Blockmap:add(obj)
         end
     end
     self.bboxes[obj] = {x0, y0, x1, y1}
+
+    self.min_x = math.min(self.min_x, x0)
+    self.max_x = math.min(self.max_x, x1)
+    self.min_y = math.min(self.min_y, y0)
+    self.max_y = math.min(self.max_y, y1)
 end
 
 function Blockmap:remove(obj)
@@ -94,6 +103,52 @@ function Blockmap:neighbors(obj, dx, dy)
     -- Objects do not neighbor themselves
     ret[obj] = nil
 
+    return ret
+end
+
+-- 
+function Blockmap:neighbors_along_ray(x, y, dx, dy)
+    local ex = self.blocksize / 32
+    local ey = ex
+    if dx > 0 then
+        ex = -ex
+    end
+    if dy > 0 then
+        ey = -ey
+    end
+    local seen_blocks = {}
+    local ret = {}
+    local stepx = dx * self.blocksize
+    local stepy = dy * self.blocksize
+    -- Walk a series of bboxes
+    while true do
+        local x0, y0 = x - ex, y - ey
+        local x1, y1 = x + stepx + ex, y + stepy + ey
+        local a0, b0 = self:to_block_units(x - ex, y - ey)
+        local a1, b1 = self:to_block_units(x + stepx + ex, y + stepy + ey)
+        for a = a0, a1 do
+            for b = b0, b1 do
+                -- Get the block manually, to avoid creating one if not necessary
+                local column = self.blocks[a]
+                local block
+                if column then
+                    block = column[b]
+                end
+                if block then
+                    for neighbor in pairs(block) do
+                        ret[neighbor] = true
+                    end
+                end
+            end
+        end
+        x = x + stepx
+        y = y + stepy
+        -- TODO this is technically not right, since we might be firing the ray
+        -- from outside the blockmap /towards/ it.  but that seems unlikely.
+        if x < self.min_x or x > self.max_x or y < self.min_y or y > self.max_y then
+            break
+        end
+    end
     return ret
 end
 
