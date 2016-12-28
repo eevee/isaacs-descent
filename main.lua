@@ -13,6 +13,7 @@ local DialogueScene = require 'isaacsdescent.scenes.dialogue'
 
 
 game = {
+    debug = false,
     sprites = {},
 }
 
@@ -117,7 +118,14 @@ end
 
 --------------------------------------------------------------------------------
 
-function love.load(arg)
+function love.load(args)
+    for i, arg in ipairs(args) do
+        if arg == '--xyzzy' then
+            print('Nothing happens.')
+            game.debug = true
+        end
+    end
+
     love.graphics.setDefaultFilter('nearest', 'nearest', 1)
 
     -- Load all the graphics upfront
