@@ -63,7 +63,7 @@ function WorldScene:update(dt)
 end
 
 function WorldScene:draw()
-    love.graphics.push()
+    love.graphics.push('all')
     love.graphics.translate(-self.camera.x, -self.camera.y)
 
     -- TODO once the camera is set up, consider rigging the map to somehow
@@ -75,15 +75,30 @@ function WorldScene:draw()
         actor:draw(dt)
     end
 
+    self.map:draw('objects', self.camera, love.graphics.getDimensions())
     self.map:draw('foreground', self.camera, love.graphics.getDimensions())
+
+    if game.debug then
+        --[[
+        for shape in pairs(self.collider.shapes) do
+            shape:draw('line')
+        end
+        ]]
+        for _, actor in ipairs(self.actors) do
+            if actor.shape then
+                love.graphics.setColor(255, 255, 0, 192)
+                actor.shape:draw('line')
+            end
+            love.graphics.setColor(255, 0, 0)
+            love.graphics.circle('fill', actor.pos.x, actor.pos.y, 2)
+            love.graphics.setColor(255, 255, 255)
+            love.graphics.circle('line', actor.pos.x, actor.pos.y, 2)
+        end
+    end
 
     love.graphics.pop()
 
-    do return end
-    for shape in pairs(self.collider.shapes) do
-        shape:draw('line')
-    end
-
+    --[[
     if debug_hits then
         for hit, touchtype in pairs(debug_hits) do
             if touchtype > 0 then
@@ -103,6 +118,7 @@ function WorldScene:draw()
         end
         love.graphics.setColor(255, 255, 255)
     end
+    ]]
 end
 
 --------------------------------------------------------------------------------
