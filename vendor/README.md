@@ -8,6 +8,8 @@ Vendored on Sep 3, 2016
 
 Original source: https://github.com/kikito/anim8
 
+License: MIT
+
 ## dkjson
 
 Version 2.5
@@ -15,6 +17,8 @@ Version 2.5
 Vendored on Aug 29, 2016
 
 Original source: http://dkolf.de/src/dkjson-lua.fsl/home
+
+License: MIT
 
 ## HUMP
 
@@ -24,4 +28,4 @@ Vendored on Aug 30, 2016
 
 Original source: https://github.com/vrld/hump
 
-
+License: MIT
