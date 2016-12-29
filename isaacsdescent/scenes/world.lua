@@ -16,6 +16,7 @@ local actors_lookup = {
     magical_bridge = actors_misc.MagicalBridge,
     wooden_switch = actors_misc.WoodenSwitch,
     laser_eye = actors_misc.LaserEye,
+    ['tome of levitation'] = actors_misc.TomeOfLevitation,
 }
 
 local WorldScene = Class{
@@ -33,6 +34,13 @@ end
 -- hump.gamestate hooks
 
 function WorldScene:update(dt)
+    if self.inventory_switch then
+        self.inventory_switch.progress = self.inventory_switch.progress + dt * 3
+        if self.inventory_switch.progress >= 2 then
+            self.inventory_switch = nil
+        end
+    end
+
     -- TODO i can't tell if this belongs here.  probably not, since it /should/
     -- do a fadeout.  maybe on the game object itself?
     if self.player and self.player.__EXIT then
@@ -94,31 +102,71 @@ function WorldScene:draw()
             love.graphics.setColor(255, 255, 255)
             love.graphics.circle('line', actor.pos.x, actor.pos.y, 2)
         end
+
+        if debug_hits then
+            for hit, touchtype in pairs(debug_hits) do
+                if touchtype > 0 then
+                    -- Collision: red
+                    love.graphics.setColor(255, 0, 0, 128)
+                elseif touchtype < 0 then
+                    -- Overlap: blue
+                    love.graphics.setColor(0, 64, 255, 128)
+                else
+                    -- Touch: green
+                    love.graphics.setColor(0, 192, 0, 128)
+                end
+                hit:draw('fill')
+                --love.graphics.setColor(255, 255, 0)
+                --local x, y = hit:bbox()
+                --love.graphics.print(("%0.2f"):format(d), x, y)
+            end
+        end
     end
 
     love.graphics.pop()
 
-    --[[
-    if debug_hits then
-        for hit, touchtype in pairs(debug_hits) do
-            if touchtype > 0 then
-                -- Collision: red
-                love.graphics.setColor(255, 0, 0, 128)
-            elseif touchtype < 0 then
-                -- Overlap: blue
-                love.graphics.setColor(0, 64, 255, 128)
-            else
-                -- Touch: green
-                love.graphics.setColor(0, 192, 0, 128)
-            end
-            hit:draw('fill')
-            --love.graphics.setColor(255, 255, 0)
-            --local x, y = hit:bbox()
-            --love.graphics.print(("%0.2f"):format(d), x, y)
+    love.graphics.push('all')
+
+    love.graphics.draw(p8_spritesheet, love.graphics.newQuad(192, 128, 64, 64, p8_spritesheet:getDimensions()), 0, 0)
+    love.graphics.setScissor(16, 16, love.graphics.getWidth(), 32)
+    local name = love.graphics.newText(m5x7, self.player.inventory[self.player.inventory_cursor].display_name)
+    local dy = 32
+    if self.inventory_switch then
+        if self.inventory_switch.progress < 1 then
+            dy = math.floor(self.inventory_switch.progress * 32)
+            game.sprites[self.inventory_switch.old_item.sprite_name]:instantiate():draw_at(Vector(16, 16 - dy))
+            love.graphics.draw(self.inventory_switch.new_name, 64, 32 - self.inventory_switch.new_name:getHeight() / 2 + 32 - dy)
+        else
+            love.graphics.setColor(255, 255, 255, (2 - self.inventory_switch.progress) * 255)
+            love.graphics.draw(self.inventory_switch.new_name, 64, 32 - self.inventory_switch.new_name:getHeight() / 2)
+            love.graphics.setColor(255, 255, 255)
         end
-        love.graphics.setColor(255, 255, 255)
     end
-    ]]
+
+    game.sprites[self.player.inventory[self.player.inventory_cursor].sprite_name]:instantiate():draw_at(Vector(16, 16 + 32 - dy))
+    --love.graphics.setColor(128, 0, 0)
+    --love.graphics.rectangle('fill', 64, 32 - name:getHeight() / 2, name:getWidth(), name:getHeight())
+    --love.graphics.setColor(255, 255, 255)
+    --love.graphics.draw(name, 64, 32 - name:getHeight() / 2)
+
+    love.graphics.pop()
+end
+
+function WorldScene:keypressed(key, scancode, isrepeat)
+    if key == 'q' then
+        if not self.inventory_switch then
+            local old_item = self.player.inventory[self.player.inventory_cursor]
+            self.player.inventory_cursor = self.player.inventory_cursor + 1
+            if self.player.inventory_cursor > #self.player.inventory then
+                self.player.inventory_cursor = 1
+            end
+            self.inventory_switch = {
+                old_item = old_item,
+                new_name = love.graphics.newText(m5x7, self.player.inventory[self.player.inventory_cursor].display_name),
+                progress = 0
+            }
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -146,7 +194,6 @@ function WorldScene:load_map(map)
         -- TODO use player start point!
         self.player:move_to(player_start:clone())
     end
-    self:add_actor(self.player)
 
     -- TODO this seems more a candidate for an 'enter' or map-switch event
     for _, template in ipairs(map.actor_templates) do
@@ -157,6 +204,10 @@ function WorldScene:load_map(map)
         end
         self:add_actor(class(position))
     end
+
+    -- FIXME putting the player last is really just a z hack to make the player
+    -- draw in front of everything else
+    self:add_actor(self.player)
 end
 
 function WorldScene:reload_map()

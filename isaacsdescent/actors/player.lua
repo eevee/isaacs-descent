@@ -15,6 +15,8 @@ local Player = Class{
     sprite_name = 'isaac',
 
     is_player = true,
+
+    inventory_cursor = 1,
 }
 
 function Player:init(...)
@@ -31,7 +33,8 @@ function Player:init(...)
         -- an actor somehow, but i don't want you to have real actual actors in
         -- your inventory.  i suppose you could just have a count of actor
         -- /types/, which i think is how zdoom works?
-        -- TODO sprite = ...
+        display_name = 'Staff of Iesus',
+        sprite_name = 'staff',
         on_inventory_use = function(self, activator)
             if activator.ptrs.savepoint then
                 -- TODO seems like a good place to use :die()
@@ -130,6 +133,7 @@ function Player:update(dt)
     -- physics system so i don't have to ask twice
     local hits = self._stupid_hits_hack
     self.touching_mechanism = nil
+    debug_hits = hits
     for shape in pairs(hits) do
         local actor = worldscene.collider:get_owner(shape)
         if actor and actor.is_usable then
@@ -160,9 +164,18 @@ function Player:update(dt)
         if self.touching_mechanism then
             self.touching_mechanism:on_use(self)
         else
-            -- TODO need to track currently-selected inventory item
-            self.inventory[1]:on_inventory_use(self)
+            self.inventory[self.inventory_cursor]:on_inventory_use(self)
         end
+    end
+
+    -- A floating player spawns particles
+    -- FIXME this seems a prime candidate for entity/component or something,
+    -- where floatiness is a child component with its own update behavior
+    -- FIXME this is hardcoded for isaac's bbox, roughly -- should be smarter
+    if self.is_floating and math.random() < dt * 8 then
+        worldscene:add_actor(actors_misc.Particle(
+            self.pos + Vector(math.random(-16, 16), 0), Vector(0, -32), Vector(0, 0),
+            {255, 255, 255}, 1.5, true))
     end
 end
 

@@ -141,6 +141,8 @@ function love.load(args)
 
     -- TODO list resources to load declaratively and actually populate them in this function?
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
+    game.sprites.staff = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.staff:add_pose('default', {1, 4}, 1, 'pauseAtEnd')
     game.sprites.spikes_up = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.spikes_up:add_pose('default', {9, 1}, 1, 'pauseAtEnd')
     game.sprites.wooden_switch = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
@@ -167,6 +169,8 @@ function love.load(args)
     game.sprites.laser_vert = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
     game.sprites.laser_vert:add_pose('default', {11, 5}, 1, 'pauseAtEnd')
     game.sprites.laser_vert:add_pose('end', {12, 5}, 1, 'pauseAtEnd')
+    game.sprites.tome_of_levitation = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
+    game.sprites.tome_of_levitation:add_pose('default', {3, 4}, 1, 'pauseAtEnd')
 
     dialogue_spritesheet = love.graphics.newImage('assets/images/dialogue.png')
     game.sprites.isaac_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
@@ -182,7 +186,7 @@ function love.load(args)
     dialogueboximg2 = love.graphics.newImage('assets/images/lexy-dialogue.png')
     local fontscale = 2
     m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
-    m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
+    --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
     love.graphics.setFont(m5x7)
 
     local resource_manager = ResourceManager()

@@ -25,6 +25,13 @@ local Actor = Class{
 
     -- Indicates this is an object that responds to the use key
     is_usable = false,
+
+    -- Makes an actor immune to gravity and occasionally spawn white particles.
+    -- Used for items, as well as the levitation spell
+    is_floating = false,
+
+    -- Completely general-purpose timer
+    timer = 0,
 }
 
 function Actor:init(position)
@@ -48,13 +55,18 @@ end
 
 -- Called once per update frame; any state changes should go here
 function Actor:update(dt)
+    self.timer = self.timer + dt
     self.sprite:update(dt)
 end
 
 -- Draw the actor
 function Actor:draw()
     if self.sprite then
-        self.sprite:draw_at(self.pos - self.anchor)
+        local where = self.pos - self.anchor
+        if self.is_floating then
+            where.y = where.y + math.sin(self.timer) * 4
+        end
+        self.sprite:draw_at(where)
     end
 end
 
@@ -105,7 +117,7 @@ local MobileActor = Class{
     -- Units are pixels and seconds!
     min_speed = 1/256 * PICO8V,
     max_speed = 1/4 * PICO8V,
-    friction = 1/16 * PICO8A,  -- not actually from pico8
+    friction = 1/16 * PICO8A * 0.75,  -- not actually from pico8
     ground_friction = 1,
     max_slope = Vector(1, 1),
 
@@ -117,9 +129,9 @@ local MobileActor = Class{
     -- Pick a jump velocity that gets us up 2 tiles, plus a margin of error
     jumpvel = math.sqrt(2 * gravity.y * (TILE_SIZE * 2.25)),
     jumpcap = 0.25,
-    -- multiplied by xaccel while
-    -- airborne
-    aircontrol = 0.5,
+    -- Multiplier for xaccel while airborne.  MUST be greater than the ratio of
+    -- friction to xaccel, or the player won't be able to move while floating!
+    aircontrol = 0.75,
 
     -- Physics state
     on_ground = false,
@@ -151,27 +163,29 @@ function MobileActor:_do_physics(dt)
         --print("velocity after deceleration:", self.velocity)
     end
 
-    -- TODO factor the ground_friction constant into both of these
-    -- Slope resistance -- an actor's ability to stay in place on an incline
-    -- It always pushes upwards along the slope.  It has no cap, since it
-    -- should always exactly oppose gravity, as long as the slope is shallow
-    -- enough.
-    -- Skip it entirely if we're not even moving in the general direction
-    -- of gravity, though, so it doesn't interfere with jumping.
-    if self.on_ground and self.last_slide then
-        --print("last slide:", self.last_slide)
-        local slide1 = self.last_slide:normalized()
-        if gravity * self.max_slope:normalized() - gravity * slide1 > -1e-8 then
-            local slope_resistance = -(gravity * slide1)
-            self.velocity = self.velocity + slope_resistance * dt * slide1
-            --print("velocity after slope resistance:", self.velocity)
+    if not self.is_floating then
+        -- TODO factor the ground_friction constant into both of these
+        -- Slope resistance -- an actor's ability to stay in place on an incline
+        -- It always pushes upwards along the slope.  It has no cap, since it
+        -- should always exactly oppose gravity, as long as the slope is shallow
+        -- enough.
+        -- Skip it entirely if we're not even moving in the general direction
+        -- of gravity, though, so it doesn't interfere with jumping.
+        if self.on_ground and self.last_slide then
+            --print("last slide:", self.last_slide)
+            local slide1 = self.last_slide:normalized()
+            if gravity * self.max_slope:normalized() - gravity * slide1 > -1e-8 then
+                local slope_resistance = -(gravity * slide1)
+                self.velocity = self.velocity + slope_resistance * dt * slide1
+                --print("velocity after slope resistance:", self.velocity)
+            end
         end
-    end
 
-    -- Gravity
-    self.velocity = self.velocity + gravity * dt
-    self.velocity.y = math.min(self.velocity.y, terminal_velocity)
-    --print("velocity after gravity:", self.velocity)
+        -- Gravity
+        self.velocity = self.velocity + gravity * dt
+        self.velocity.y = math.min(self.velocity.y, terminal_velocity)
+        --print("velocity after gravity:", self.velocity)
+    end
 
     -- Calculate the desired movement, always trying to move us such that we
     -- end up on the edge of a pixel.  Round away from zero, to avoid goofy
@@ -196,6 +210,7 @@ function MobileActor:_do_physics(dt)
 
     -- First things first: restrict movement to within the current map
     -- TODO ARGH, worldscene is a global!
+    -- FIXME hitting the bottom of the map should count as landing on solid ground
     do
         local l, t, r, b = self.shape:bbox()
         local ml, mt, mr, mb = 0, 0, worldscene.map.width, worldscene.map.height

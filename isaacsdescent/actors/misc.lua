@@ -16,12 +16,14 @@ local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 -- do i need a BaseActor or something?
 local Particle = Class{}
 
-function Particle:init(position, velocity, acceleration, color, ttl)
+function Particle:init(position, velocity, acceleration, color, ttl, fadeout)
     self.pos = position
     self.velocity = velocity
     self.acceleration = acceleration
     self.color = color
     self.ttl = ttl
+    self.original_ttl = ttl
+    self.fadeout = fadeout
 end
 
 function Particle:on_spawn()
@@ -39,7 +41,16 @@ end
 
 function Particle:draw()
     love.graphics.push('all')
-    love.graphics.setColor(unpack(self.color))
+    if self.fadeout then
+        local r, g, b, a = unpack(self.color)
+        if a == nil then
+            a = 255
+        end
+        a = a * (self.ttl / self.original_ttl)
+        love.graphics.setColor(r, g, b, a)
+    else
+        love.graphics.setColor(unpack(self.color))
+    end
     love.graphics.points(self.pos:unpack())
     love.graphics.pop()
 end
@@ -174,10 +185,10 @@ function Savepoint:on_spawn()
         local direction = Vector(math.cos(angle), math.sin(angle))
         worldscene:add_actor(Particle(
             self.pos + direction * 4,
-            direction * 32,
+            direction * 32 * love.math.random(0.75, 1),
             Vector(0, 1),
             {190, 235, 113},
-            1
+            1, true
         ))
     end
 end
@@ -193,7 +204,7 @@ function Savepoint:update(dt)
             direction * 16,
             Vector(0, 1),
             {190, 235, 113},
-            1.5
+            1.5, true
         ))
     end
 end
@@ -206,6 +217,9 @@ local Laser = Class{
     fullbright = true,
     anchor = Vector(16, 0),
     shape = whammo_shapes.Box(14, 0, 4, 32),
+
+    laser_length = 0,
+    laser_vector = Vector.zero,
 }
 
 function Laser:update(dt)
@@ -346,10 +360,54 @@ function LaserEye:update(dt)
 end
 
 
+-- inventory items
+local TomeOfLevitation = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'tome_of_levitation',
+    anchor = Vector(0, 0),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+    is_floating = true,
+
+    -- inventory
+    display_name = 'Tome of Freefall',
+}
+
+function TomeOfLevitation:update(dt)
+    actors_base.Actor.update(self, dt)
+    -- FIXME this is basically duplicated for isaac, but it's also not really
+    -- an appropriate effect here i think?
+    if math.random() < dt * 4 then
+        worldscene:add_actor(Particle(
+            self.pos + Vector(math.random() * 32, 32), Vector(0, -32), Vector(0, 0),
+            {255, 255, 255}, 1.5, true))
+    end
+end
+
+function TomeOfLevitation:on_inventory_use(activator)
+    if activator.is_floating then
+        activator.is_floating = false
+    elseif activator.on_ground then
+        activator.is_floating = true
+    end
+end
+
+function TomeOfLevitation:on_collide(other, direction)
+    if other.is_player then
+        table.insert(other.inventory, TomeOfLevitation)
+        worldscene:remove_actor(self)
+    end
+end
+
+
+
+
 return {
+    Particle = Particle,
     SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,
     Savepoint = Savepoint,
     LaserEye = LaserEye,
+    TomeOfLevitation = TomeOfLevitation,
 }
