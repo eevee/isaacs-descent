@@ -48,7 +48,8 @@ function Actor:init(position)
     -- how would our bounding box change?
     self.sprite = game.sprites[self.sprite_name]:instantiate()
 
-    -- TODO christ
+    -- FIXME i could get rid of this if i just said shapes are relative to the
+    -- anchor.  also if i put collision shapes in tiled
     self.initial_shape_offset = Vector(self.shape.x0, self.shape.y0)
     self.shape:move_to((position - self.anchor + self.initial_shape_offset):unpack())
 end
@@ -117,7 +118,8 @@ local MobileActor = Class{
     -- Units are pixels and seconds!
     min_speed = 1/256 * PICO8V,
     max_speed = 1/4 * PICO8V,
-    friction = 1/16 * PICO8A * 0.75,  -- not actually from pico8
+    -- FIXME i feel like this is not done well.  floating should feel floatier
+    friction = 1/16 * PICO8A,  -- not actually from pico8
     ground_friction = 1,
     max_slope = Vector(1, 1),
 

@@ -149,25 +149,6 @@ function Player:update(dt)
         self.__EXIT = true
     end
 
-    -- Apply other actions
-    -- TODO is there a compelling reason i'm doing this after movement, rather
-    -- than before?
-    -- TODO this is, ah, clumsy.  perhaps i should use the keypressed hook after all.
-    -- TODO also it triggers on reload lol.
-    local is_e_pressed = love.keyboard.isDown('e')
-    local is_e_tapped = is_e_pressed and not self.was_e_pressed
-    self.was_e_pressed = is_e_pressed
-    if is_e_tapped then
-        -- TODO this seems like the sort of thing that should, maybe, be
-        -- scheduled as an event so it runs at a consistent time and isn't part
-        -- of the update loop?  is there any good reason for that?
-        if self.touching_mechanism then
-            self.touching_mechanism:on_use(self)
-        else
-            self.inventory[self.inventory_cursor]:on_inventory_use(self)
-        end
-    end
-
     -- A floating player spawns particles
     -- FIXME this seems a prime candidate for entity/component or something,
     -- where floatiness is a child component with its own update behavior
@@ -226,12 +207,17 @@ function Player:resurrect()
         self.is_dead = false
         -- Reset physics
         self.velocity = Vector(0, 0)
+        -- FIXME this sounds reasonable, but if you resurrect /in place/ it's
+        -- weird to change facing direction?  hmm
         self.facing_left = false
         -- This does a collision check without moving the player, which is a
         -- clever way to check whether they're on flat ground, update their
         -- sprite, etc. before any actual movement (or input!) happens.
         -- FIXME it's possible for the player to die again here, and that
         -- screws up the scene order and won't get you a dead scene, eek!
+        -- FIXME this still takes player /input/, which makes it not solve the
+        -- original problem i wanted of making on_ground be correct!
+        self.on_ground = false
         self:update(0)
         -- Of course, the sprite doesn't actually update until the next sprite
         -- update, dangit.

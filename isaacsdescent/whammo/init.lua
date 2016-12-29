@@ -25,8 +25,10 @@ function Collider:add(shape, owner)
 end
 
 function Collider:remove(shape)
-    self.blockmap:remove(shape)
-    self.shapes[shape] = nil
+    if self.shapes[shape] ~= nil then
+        self.blockmap:remove(shape)
+        self.shapes[shape] = nil
+    end
 end
 
 function Collider:get_owner(shape)

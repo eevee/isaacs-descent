@@ -346,7 +346,6 @@ local Box = Class{
 }
 
 function Box:init(x, y, width, height)
-    Shape.init(self)
     Polygon.init(self, x, y, x + width, y, x + width, y + height, x, y + height)
     self.width = width
     self.height = height

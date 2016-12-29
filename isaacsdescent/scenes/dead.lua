@@ -75,6 +75,8 @@ function DeadScene:keypressed(key, scancode, isrepeat)
                     -- TODO eugh this magic constant
                     player:move_to(player.ptrs.savepoint.pos + Vector(0, 16))
                     player:resurrect()
+                    -- TODO hm..  this will need doing anytime the player is forcibly moved
+                    worldscene:update_camera()
                 end))
         end
     end

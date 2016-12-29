@@ -67,11 +67,15 @@ local SpikesUp = Class{
 }
 
 function SpikesUp:blocks(actor, d)
-    return true
+    return false
 end
 
 function SpikesUp:on_collide(other, direction)
-    if other.is_player then
+    -- FIXME this gets the /full/ direction, not just the collision direction,
+    -- so it doesn't work for "am i landing on the spikes" -- i could come in
+    -- down-diagonally on one side, or i could be falling past without
+    -- colliding
+    if other.is_player and direction.y > 0 then
         -- TODO i feel that damage should be dealt in a more roundabout way?
         other:die()
     end
@@ -230,7 +234,7 @@ function Laser:update(dt)
         self.pos,
         self.laser_direction,
         function (actor)
-            if actor == self then
+            if actor ~= nil then
                 return true
             else
                 return false
@@ -238,13 +242,12 @@ function Laser:update(dt)
         end)
     self.laser_length = impactdist
     self.laser_vector = self.laser_direction * impactdist
-    -- TODO this involves some kerjiggering and belongs in init
-    --[[
-    self.shape = whammo_shapes.Box(
-        0.375, 0, 0.25, bottom.y - pos.y)
-    ]]
+    -- FIXME need a real way to do this
+    worldscene.collider:remove(self.shape)
+    self.shape = whammo_shapes.Box(14, 0, 4, self.laser_length)
+    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
+    worldscene.collider:add(self.shape, self)
 
-    --local coll = self:coll()
     if math.random() < 0.1 then
         -- TODO should rotate this to face back along laser vector
         local angle = math.random() * math.pi * 2
@@ -259,14 +262,6 @@ function Laser:update(dt)
             {255, 0, 0},
             0.5))
     end
-    -- TODO (a) no way to check for arbitrary collision at the moment
-    -- TODO (b) surely this should be an oncollide -- the problem is that it
-    -- doesn't count as a collision if the laser moves onto the player
-    --[[
-    if coll:overlaps(player:coll()) then
-        player:die()
-    end
-    ]]
 end
 
 -- TODO custom drawing too
@@ -276,6 +271,7 @@ function Laser:draw()
     -- TODO this is a clusterfuck
     love.graphics.push('all')
     love.graphics.setLineWidth(2)
+    -- FIXME where does this color come from?  should probably use a sprite regardless
     love.graphics.setColor(255, 0, 0)
     love.graphics.line(self.pos.x, self.pos.y, (self.pos + self.laser_vector):unpack())
     love.graphics.pop()
@@ -287,25 +283,44 @@ function Laser:draw()
     --rectfill(coll.l * 8, coll.t * 8, coll.r * 8 - 1, coll.b * 8 - 1, 8)
 end
 
+function Laser:on_collide(other, direction)
+    if other.is_player then
+        -- TODO i feel that damage should be dealt in a more roundabout way?
+        other:die()
+    end
+end
+
 
 -- TODO this should probably have a cute canon name
 local LaserEye = Class{
-    __includes = actors_base.Actor,
+    __includes = actors_base.MobileActor,
 
     sprite_name = 'laser_eye',
     anchor = Vector(16, 16),
     shape = whammo_shapes.Box(0, 0, 32, 32),
 
     sensor_range = 64,
-
     sleep_timer = 0,
+    is_awake = false,
+
+    is_floating = true,
+    -- We don't accelerate, so ignore friction as well
+    friction = 0,
 }
+
+function LaserEye:init(...)
+    actors_base.MobileActor.init(self, ...)
+    self.pos0 = self.pos
+    self.waking_velocity = Vector(64, 0)
+    self.velocity = self.waking_velocity:clone()
+end
 
 function LaserEye:reset()
     self:sleep()
 end
 
 function LaserEye:sleep()
+    self.is_awake = false
     self.sleep_timer = 0
     self.sprite:set_pose('default/right')
     if self.ptrs.laser then
@@ -325,9 +340,10 @@ function LaserEye:update(dt)
     end
     if dist < self.sensor_range then
         self.sprite:set_pose('awake/right')
+        self.is_awake = true
         self.sleep_timer = 4
         if not self.ptrs.laser then
-            local laser = Laser(self.pos + Vector(0, 16))
+            local laser = Laser(self.pos + Vector(0, 12))
             self.ptrs.laser = laser
             worldscene:add_actor(laser)
         end
@@ -337,26 +353,23 @@ function LaserEye:update(dt)
             self:sleep()
         end
     end
-    actors_base.Actor.update(self, dt)
--- TODO movement
---[[
-    if self.pose == "awake" then
-        local dx = 0.125
-        local d0 = self.pos.x - self.pos0.x
-        if d0 > 4 then
-            self.reverse = true
-        elseif d0 < -4 then
-            self.reverse = false
+
+    if self.is_awake then
+        actors_base.MobileActor.update(self, dt)
+        -- Keep the laser in lockstep with us
+        if self.ptrs.laser then
+            self.ptrs.laser:move_to(self.pos + Vector(0, 12))
         end
-        if self.reverse then
-            dx *= -1
+        -- If we hit something (which cuts our velocity), reverse direction
+        if self.velocity:len2() < self.waking_velocity:len2() then
+            self.waking_velocity = - self.waking_velocity
+            self.velocity = self.waking_velocity:clone()
         end
-        self.pos.x += dx
-        if self.laser then
-            self.laser.pos.x += dx
-        end
+    else
+        -- Still need to update the sprite!!
+        -- FIXME this is a running theme
+        actors_base.Actor.update(self, dt)
     end
-]]
 end
 
 

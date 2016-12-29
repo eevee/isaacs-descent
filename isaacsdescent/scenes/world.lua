@@ -58,6 +58,10 @@ function WorldScene:update(dt)
         actor:update(dt)
     end
 
+    self:update_camera()
+end
+
+function WorldScene:update_camera()
     -- Update camera position
     -- TODO i miss having a box type
     if self.player then
@@ -158,6 +162,7 @@ end
 
 function WorldScene:keypressed(key, scancode, isrepeat)
     if key == 'q' then
+        -- Switch inventory items
         if not self.inventory_switch then
             local old_item = self.player.inventory[self.player.inventory_cursor]
             self.player.inventory_cursor = self.player.inventory_cursor + 1
@@ -169,6 +174,14 @@ function WorldScene:keypressed(key, scancode, isrepeat)
                 new_name = love.graphics.newText(m5x7, self.player.inventory[self.player.inventory_cursor].display_name),
                 progress = 0
             }
+        end
+    elseif key == 'e' then
+        -- Use inventory item, or nearby thing
+        -- FIXME this should be separate keys maybe?
+        if self.player.touching_mechanism then
+            self.player.touching_mechanism:on_use(self.player)
+        else
+            self.player.inventory[self.player.inventory_cursor]:on_inventory_use(self.player)
         end
     end
 end
