@@ -217,7 +217,7 @@ function Player:die()
         -- switch to knife...
         -- TODO oh, it gets better: switch gamestate during an update means draw
         -- doesn't run this cycle, so you get a single black frame
-        Gamestate.switch(DeadScene(Gamestate.current()))
+        Gamestate.push(DeadScene())
     end
 end
 
@@ -226,7 +226,18 @@ function Player:resurrect()
         self.is_dead = false
         -- Reset physics
         self.velocity = Vector(0, 0)
-        self.on_ground = false  -- TODO this one's always tricky
+        self.facing_left = false
+        -- This does a collision check without moving the player, which is a
+        -- clever way to check whether they're on flat ground, update their
+        -- sprite, etc. before any actual movement (or input!) happens.
+        -- FIXME it's possible for the player to die again here, and that
+        -- screws up the scene order and won't get you a dead scene, eek!
+        self:update(0)
+        -- Of course, the sprite doesn't actually update until the next sprite
+        -- update, dangit.
+        -- FIXME seems like i could reorder update() to fix this; otherwise
+        -- there's a frame delay on ANY movement that changes the sprite
+        self.sprite:update(0)
     end
 end
 

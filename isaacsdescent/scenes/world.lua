@@ -34,6 +34,10 @@ end
 -- hump.gamestate hooks
 
 function WorldScene:update(dt)
+    if love.keyboard.isDown(',') then
+        local Gamestate = require 'vendor.hump.gamestate'
+        Gamestate.switch(self)
+    end
     if self.inventory_switch then
         self.inventory_switch.progress = self.inventory_switch.progress + dt * 3
         if self.inventory_switch.progress >= 2 then
@@ -191,7 +195,6 @@ function WorldScene:load_map(map)
     if not self.player then
         self.player = Player(player_start:clone())
     else
-        -- TODO use player start point!
         self.player:move_to(player_start:clone())
     end
 
@@ -208,13 +211,18 @@ function WorldScene:load_map(map)
     -- FIXME putting the player last is really just a z hack to make the player
     -- draw in front of everything else
     self:add_actor(self.player)
-end
 
-function WorldScene:reload_map()
-    if self.player then
+    -- Rez the player if necessary.  This MUST happen after moving the player
+    -- (and SHOULD happen after populating the world, anyway) because it does a
+    -- zero-duration update, and if the player is still touching whatever
+    -- killed them, they'll instantly die again.
+    if self.player.is_dead then
         -- TODO should this be a more general 'reset'?
         self.player:resurrect()
     end
+end
+
+function WorldScene:reload_map()
     self:load_map(self.map)
 end
 

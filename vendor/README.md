@@ -20,6 +20,16 @@ Original source: http://dkolf.de/src/dkjson-lua.fsl/home
 
 License: MIT
 
+## flux
+
+Version 0.1.5
+
+Vendored on Dec 28, 2016
+
+Original source: https://github.com/rxi/flux
+
+License: MIT
+
 ## HUMP
 
 Commit 400c8ea7 from May 24, 2016
