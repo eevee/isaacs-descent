@@ -247,7 +247,7 @@ function MobileActor:_do_physics(dt)
     -- TODO surely we should announce this in the order we hit!  all the more
     -- reason to hoist the loop out of whammo and into here
     for shape in pairs(hits) do
-        local actor = worldscene.shape_to_actor[shape]
+        local actor = worldscene.collider:get_owner(shape)
         if actor then
             -- TODO should we also pass along the touchtype?
             actor:on_collide(self, movement)

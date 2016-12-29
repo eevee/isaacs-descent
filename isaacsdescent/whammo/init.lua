@@ -5,21 +5,36 @@ local util = require 'isaacsdescent.util'
 local Blockmap = require 'isaacsdescent.whammo.blockmap'
 local shapes = require 'isaacsdescent.whammo.shapes'
 
-local Collider = Class{}
+local Collider = Class{
+    _NOTHING = {},
+}
 
 function Collider:init(blocksize)
+    -- Weak map of shapes to their "owners", where "owner" can mean anything
+    -- and is the special value _NOTHING to mean no owner
     self.shapes = setmetatable({}, {__mode = 'k'})
     self.blockmap = Blockmap(blocksize)
 end
 
-function Collider:add(shape)
+function Collider:add(shape, owner)
+    if owner == nil then
+        owner = self._NOTHING
+    end
     self.blockmap:add(shape)
-    self.shapes[shape] = true
+    self.shapes[shape] = owner
 end
 
 function Collider:remove(shape)
     self.blockmap:remove(shape)
     self.shapes[shape] = nil
+end
+
+function Collider:get_owner(shape)
+    owner = self.shapes[shape]
+    if owner == self._NOTHING then
+        owner = nil
+    end
+    return owner
 end
 
 
@@ -84,9 +99,10 @@ function Collider:slide(shape, dx, dy)
             if collision.touchtype < 0 then
                 -- Objects we're overlapping are always passable
                 is_passable = true
-            elseif worldscene then
-                -- TODO oh no this global definitely does not need to be in here
-                local otheractor = worldscene.shape_to_actor[collision.shape]
+            else
+                -- FIXME this is better than using worldscene but still assumes
+                -- knowledge of the actor api
+                local otheractor = self:get_owner(collision.shape)
                 if otheractor and not otheractor:blocks(self, collision.move) then
                     is_passable = true
                 end
@@ -178,8 +194,7 @@ function Collider:fire_ray(start, direction, collision_check_func)
         start.x, start.y, direction.x, direction.y)
     local _hits = {}
     for neighbor in pairs(neighbors) do
-        -- FIXME shape_to_actor haunts my dreams
-        if not collision_check_func or not collision_check_func(worldscene.shape_to_actor[neighbor]) then
+        if not collision_check_func or not collision_check_func(self:get_owner(neighbor)) then
             -- TODO i can do this by projecting the whole shape onto the ray, i think??  that gives me distance (along the ray, anyway), then i just need to check that it actually hits, somehow.  project onto perpendicular?
             local min, max, minpt, maxpt = neighbor:project_onto_axis(perp)
             if min <= startperpdot and startperpdot <= max then

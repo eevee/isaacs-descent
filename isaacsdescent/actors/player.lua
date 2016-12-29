@@ -123,7 +123,7 @@ function Player:update(dt)
     local hits = self._stupid_hits_hack
     self.touching_mechanism = nil
     for shape in pairs(hits) do
-        local actor = worldscene.shape_to_actor[shape]
+        local actor = worldscene.collider:get_owner(shape)
         if actor and actor.is_usable then
             self.touching_mechanism = actor
             break

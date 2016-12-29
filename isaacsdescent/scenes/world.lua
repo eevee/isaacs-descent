@@ -133,9 +133,6 @@ function WorldScene:load_map(map)
     -- TODO this seems clearly wrong, especially since i don't clear the
     -- collider, but it happens to work (i think)
     map:add_to_collider(self.collider)
-    -- TODO i feel like all this stuff is a /little/...  disconnected.  like
-    -- what happens if an actor's shape changes?
-    self.shape_to_actor = {}
 
     local player_start = self.map.player_start
     -- FIXME fix all the maps and then make this fatal
@@ -174,10 +171,8 @@ function WorldScene:add_actor(actor)
     table.insert(self.actors, actor)
 
     if actor.shape then
-        self.collider:add(actor.shape)
-
-        -- TODO again, yeah, what happens if the shape changes?
-        self.shape_to_actor[actor.shape] = actor
+        -- TODO what happens if the shape changes?
+        self.collider:add(actor.shape, actor)
     end
 
     actor:on_spawn()
@@ -198,8 +193,6 @@ function WorldScene:remove_actor(actor)
 
     if actor.shape then
         self.collider:remove(actor.shape)
-
-        self.shape_to_actor[actor.shape] = nil
     end
 end
 

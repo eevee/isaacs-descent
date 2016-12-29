@@ -295,7 +295,7 @@ function Polygon:slide_towards(other, movement)
         -- Shapes are already colliding
         -- TODO should maybe...  return something more specific here?
         --error("seem to be inside something!!  stopping so you can debug buddy  <3")
-        --print("ALREADY COLLIDING", worldscene.shape_to_actor[other])
+        --print("ALREADY COLLIDING", worldscene.collider:get_owner(other))
         return Vector.zero, -1, util.ClockRange(util.ClockRange.ZERO, util.ClockRange.ZERO)
         --return
     end
