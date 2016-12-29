@@ -51,7 +51,7 @@ end
 
 function Player:update(dt)
     if self.is_dead then
-        -- TODO buuut still gotta update the sprite...
+        -- FIXME a corpse still has physics, just not input
         self.sprite:update(dt)
         return
     end
@@ -101,6 +101,14 @@ function Player:update(dt)
 
     -- Run the base logic to perform movement, collision, sprite updating, etc.
     actors_base.MobileActor.update(self, dt)
+
+    -- FIXME uhh this sucks, but otherwise the death animation is clobbered by
+    -- the bit below!  should death skip the rest of the actor's update cycle
+    -- entirely, including activating any other collision?  should death only
+    -- happen at the start of a frame?  should it be an event or something?
+    if self.is_dead then
+        return
+    end
 
     -- Update pose depending on actual movement
     if self.on_ground then
