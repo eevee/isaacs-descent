@@ -104,7 +104,7 @@ local PICO8A = TILE_SIZE / (1/30) / (1/30)
 
 -- TODO these are a property of the world and should go on the world object
 -- once one exists
-local gravity = Vector(0, 1/32 * PICO8A)
+local gravity = Vector(0, 0.75/32 * PICO8A)
 local terminal_velocity = 7/8 * PICO8V
 
 local MobileActor = Class{
