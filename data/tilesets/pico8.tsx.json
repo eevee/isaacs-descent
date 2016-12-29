@@ -13,6 +13,10 @@
         {
          "actor":"magical_bridge"
         },
+     "50":
+        {
+         "actor":"tome of levitation"
+        },
      "56":
         {
          "actor":"wooden_switch"
@@ -29,6 +33,10 @@
  "tilepropertytypes":
     {
      "42":
+        {
+         "actor":"string"
+        },
+     "50":
         {
          "actor":"string"
         },
@@ -200,6 +208,68 @@
                      "width":32,
                      "x":0,
                      "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "36":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":5,
+                     "id":1,
+                     "name":"",
+                     "properties":
+                        {
+                         "one-way platform":true
+                        },
+                     "propertytypes":
+                        {
+                         "one-way platform":"bool"
+                        },
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "47":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":18,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":14
                     }],
              "opacity":1,
              "type":"objectgroup",
