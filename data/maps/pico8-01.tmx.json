@@ -65,6 +65,10 @@
         {
          "firstgid":1,
          "source":"..\/tilesets\/pico8.tsx.json"
+        }, 
+        {
+         "firstgid":257,
+         "source":"..\/tilesets\/player.tsx.json"
         }],
  "tilewidth":32,
  "version":1,

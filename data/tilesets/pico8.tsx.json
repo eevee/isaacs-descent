@@ -9,64 +9,158 @@
  "tileheight":32,
  "tileproperties":
     {
+     "18":
+        {
+         "sprite name":"savepoint\/default"
+        },
+     "38":
+        {
+         "sprite name":"stone_door\/default"
+        },
+     "39":
+        {
+         "sprite name":"stone_door\/end"
+        },
      "42":
         {
-         "actor":"magical_bridge"
+         "actor":"magical_bridge",
+         "sprite name":"magical_bridge\/default"
+        },
+     "43":
+        {
+         "sprite name":"stone_door_shutter\/active"
         },
      "46":
         {
-         "actor":"stone door shutter"
+         "actor":"stone door shutter",
+         "sprite name":"stone_door_shutter\/default"
+        },
+     "48":
+        {
+         "sprite name":"staff\/default"
         },
      "50":
         {
-         "actor":"tome of levitation"
+         "actor":"tome of levitation",
+         "sprite name":"tome_of_levitation\/default"
         },
      "56":
         {
-         "actor":"wooden_switch"
+         "actor":"wooden_switch",
+         "sprite name":"wooden_switch\/default"
+        },
+     "57":
+        {
+         "sprite name":"wooden_switch\/switched"
         },
      "58":
         {
-         "actor":"laser_eye"
+         "actor":"laser_eye",
+         "sprite name":"laser_eye\/default"
+        },
+     "59":
+        {
+         "sprite name":"laser_eye\/awake"
         },
      "62":
         {
-         "actor":"wooden wheel"
+         "actor":"wooden wheel",
+         "sprite name":"wooden_wheel\/default"
+        },
+     "63":
+        {
+         "sprite name":"wooden_wheel\/turning"
+        },
+     "74":
+        {
+         "sprite name":"laser_vert\/default"
+        },
+     "75":
+        {
+         "sprite name":"laser_vert\/end"
         },
      "8":
         {
-         "actor":"spikes_up"
+         "actor":"spikes_up",
+         "sprite name":"spikes_up\/default"
         }
     },
  "tilepropertytypes":
     {
+     "18":
+        {
+         "sprite name":"string"
+        },
+     "38":
+        {
+         "sprite name":"string"
+        },
+     "39":
+        {
+         "sprite name":"string"
+        },
      "42":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "43":
+        {
+         "sprite name":"string"
         },
      "46":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "48":
+        {
+         "sprite name":"string"
         },
      "50":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
         },
      "56":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "57":
+        {
+         "sprite name":"string"
         },
      "58":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "59":
+        {
+         "sprite name":"string"
         },
      "62":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "63":
+        {
+         "sprite name":"string"
+        },
+     "74":
+        {
+         "sprite name":"string"
+        },
+     "75":
+        {
+         "sprite name":"string"
         },
      "8":
         {
-         "actor":"string"
+         "actor":"string",
+         "sprite name":"string"
         }
     },
  "tiles":
@@ -124,6 +218,62 @@
              "x":0,
              "y":0
             }
+        },
+     "18":
+        {
+         "animation":[
+                {
+                 "duration":100,
+                 "tileid":18
+                }, 
+                {
+                 "duration":100,
+                 "tileid":19
+                }, 
+                {
+                 "duration":100,
+                 "tileid":20
+                }, 
+                {
+                 "duration":100,
+                 "tileid":21
+                }, 
+                {
+                 "duration":100,
+                 "tileid":22
+                }, 
+                {
+                 "duration":100,
+                 "tileid":23
+                }, 
+                {
+                 "duration":100,
+                 "tileid":24
+                }, 
+                {
+                 "duration":100,
+                 "tileid":25
+                }, 
+                {
+                 "duration":100,
+                 "tileid":26
+                }, 
+                {
+                 "duration":100,
+                 "tileid":27
+                }, 
+                {
+                 "duration":100,
+                 "tileid":28
+                }, 
+                {
+                 "duration":100,
+                 "tileid":29
+                }, 
+                {
+                 "duration":100,
+                 "tileid":30
+                }]
         },
      "180":
         {
@@ -297,6 +447,15 @@
         },
      "43":
         {
+         "animation":[
+                {
+                 "duration":100,
+                 "tileid":43
+                }, 
+                {
+                 "duration":100,
+                 "tileid":46
+                }],
          "objectgroup":
             {
              "draworder":"index",
@@ -375,6 +534,18 @@
              "x":0,
              "y":0
             }
+        },
+     "63":
+        {
+         "animation":[
+                {
+                 "duration":100,
+                 "tileid":63
+                }, 
+                {
+                 "duration":100,
+                 "tileid":62
+                }]
         },
      "86":
         {
