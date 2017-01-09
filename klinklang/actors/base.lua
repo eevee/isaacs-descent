@@ -341,6 +341,7 @@ end
 
 
 return {
+    BareActor = BareActor,
     Actor = Actor,
     MobileActor = MobileActor,
 }
