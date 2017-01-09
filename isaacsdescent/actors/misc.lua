@@ -137,7 +137,7 @@ local Savepoint = Class{
     -- TODO z?  should always be in background
 }
 
-function Savepoint:on_spawn()
+function Savepoint:on_enter()
     for i = 1, 8 do
         local angle = love.math.random() * 6.28
         local direction = Vector(math.cos(angle), math.sin(angle))
@@ -335,7 +335,7 @@ local StoneDoor = Class{
 }
 
 -- FIXME what happens if you stick a rune in an open doorway?
-function StoneDoor:on_spawn()
+function StoneDoor:on_enter()
     -- FIXME this "ray" should really have a /width/
     local impact, impactdist = worldscene.collider:fire_ray(
         self.pos,
@@ -420,7 +420,7 @@ function StoneDoorShutter:init(...)
     actors_base.Actor.init(self, ...)
 end
 
-function StoneDoorShutter:on_spawn()
+function StoneDoorShutter:on_enter()
     local door = StoneDoor(self.pos + Vector(0, 32))
     self.ptrs.door = door
     worldscene:add_actor(door)
