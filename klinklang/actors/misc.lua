@@ -1,5 +1,7 @@
 local Class = require 'vendor.hump.class'
 
+local actors_base = require 'klinklang.actors.base'
+
 
 local Particle = Class{
     __includes = actors_base.BareActor,
