@@ -1,5 +1,4 @@
 local flux = require 'vendor.flux'
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
 local actors_misc = require 'isaacsdescent.actors.misc'
@@ -33,8 +32,7 @@ local actors_lookup = {
 }
 local TriggerZone = require 'klinklang.actors.trigger'
 
-local WorldScene = Class{
-    __includes = BaseScene,
+local WorldScene = BaseScene:extend{
     __tostring = function(self) return "worldscene" end,
 
     music = nil,

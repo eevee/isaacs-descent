@@ -1,8 +1,8 @@
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
 local actors_base = require 'klinklang.actors.base'
 local actors_misc = require 'klinklang.actors.misc'
+local Object = require 'klinklang.object'
 local util = require 'klinklang.util'
 local whammo_shapes = require 'klinklang.whammo.shapes'
 
@@ -10,9 +10,7 @@ local whammo_shapes = require 'klinklang.whammo.shapes'
 local actors_misc2 = require 'isaacsdescent.actors.misc'
 
 
-local Player = Class{
-    __includes = actors_base.MobileActor,
-
+local Player = actors_base.MobileActor:extend{
     shape = whammo_shapes.Box(8, 16, 20, 46),
     anchor = Vector(19, 62),
     sprite_name = 'isaac',

@@ -1,6 +1,6 @@
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
+local Object = require 'klinklang.object'
 local actors_base = require 'klinklang.actors.base'
 local actors_misc = require 'klinklang.actors.misc'
 local whammo_shapes = require 'klinklang.whammo.shapes'
@@ -12,9 +12,7 @@ local whammo_shapes = require 'klinklang.whammo.shapes'
 
 
 -- spikes
-local SpikesUp = Class{
-    __includes = actors_base.Actor,
-
+local SpikesUp = actors_base.Actor:extend{
     sprite_name = 'spikes_up',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 24, 32, 8),
@@ -37,9 +35,7 @@ end
 
 
 -- wooden switch (platforms)
-local WoodenSwitch = Class{
-    __includes = actors_base.Actor,
-
+local WoodenSwitch = actors_base.Actor:extend{
     sprite_name = 'wooden_switch',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -73,9 +69,7 @@ end
 
 
 -- magical bridge, activated by wooden switch
-local MagicalBridge = Class{
-    __includes = actors_base.Actor,
-
+local MagicalBridge = actors_base.Actor:extend{
     sprite_name = 'magical_bridge',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 8),
@@ -128,9 +122,7 @@ function MagicalBridge:draw()
 end
 
 
-local Savepoint = Class{
-    __includes = actors_base.Actor,
-
+local Savepoint = actors_base.Actor:extend{
     sprite_name = 'savepoint',
     anchor = Vector(16, 16),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -168,9 +160,7 @@ function Savepoint:update(dt)
 end
 
 
-local Laser = Class{
-    __includes = actors_base.Actor,
-
+local Laser = actors_base.Actor:extend{
     sprite_name = 'laser_vert',
     fullbright = true,
     anchor = Vector(16, 0),
@@ -242,9 +232,7 @@ end
 
 
 -- TODO this should probably have a cute canon name
-local LaserEye = Class{
-    __includes = actors_base.MobileActor,
-
+local LaserEye = actors_base.MobileActor:extend{
     sprite_name = 'laser_eye',
     anchor = Vector(16, 16),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -323,9 +311,7 @@ function LaserEye:update(dt)
 end
 
 
-local StoneDoor = Class{
-    __includes = actors_base.Actor,
-
+local StoneDoor = actors_base.Actor:extend{
     sprite_name = 'stone_door',
     anchor = Vector(16, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -408,9 +394,7 @@ end
 
 
 -- TODO this should probably have a cute canon name
-local StoneDoorShutter = Class{
-    __includes = actors_base.Actor,
-
+local StoneDoorShutter = actors_base.Actor:extend{
     sprite_name = 'stone_door_shutter',
     anchor = Vector(16, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -438,9 +422,7 @@ end
 
 
 -- wooden wheel (stone doors)
-local WoodenWheel = Class{
-    __includes = actors_base.Actor,
-
+local WoodenWheel = actors_base.Actor:extend{
     sprite_name = 'wooden_wheel',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -475,9 +457,7 @@ end
 
 
 -- inventory items
-local TomeOfLevitation = Class{
-    __includes = actors_base.Actor,
-
+local TomeOfLevitation = actors_base.Actor:extend{
     sprite_name = 'tome_of_levitation',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
