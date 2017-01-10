@@ -13,6 +13,7 @@ local whammo_shapes = require 'klinklang.whammo.shapes'
 
 -- spikes
 local SpikesUp = actors_base.Actor:extend{
+    name = 'spikes_up',
     sprite_name = 'spikes_up',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 24, 32, 8),
@@ -36,6 +37,7 @@ end
 
 -- wooden switch (platforms)
 local WoodenSwitch = actors_base.Actor:extend{
+    name = 'wooden_switch',
     sprite_name = 'wooden_switch',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -70,6 +72,7 @@ end
 
 -- magical bridge, activated by wooden switch
 local MagicalBridge = actors_base.Actor:extend{
+    name = 'magical_bridge',
     sprite_name = 'magical_bridge',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 8),
@@ -123,6 +126,7 @@ end
 
 
 local Savepoint = actors_base.Actor:extend{
+    name = 'savepoint',
     sprite_name = 'savepoint',
     anchor = Vector(16, 16),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -161,6 +165,7 @@ end
 
 
 local Laser = actors_base.Actor:extend{
+    name = 'laser_vert',
     sprite_name = 'laser_vert',
     fullbright = true,
     anchor = Vector(16, 0),
@@ -233,6 +238,7 @@ end
 
 -- TODO this should probably have a cute canon name
 local LaserEye = actors_base.MobileActor:extend{
+    name = 'laser_eye',
     sprite_name = 'laser_eye',
     anchor = Vector(16, 16),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -312,6 +318,7 @@ end
 
 
 local StoneDoor = actors_base.Actor:extend{
+    name = 'stone_door',
     sprite_name = 'stone_door',
     anchor = Vector(16, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -395,6 +402,7 @@ end
 
 -- TODO this should probably have a cute canon name
 local StoneDoorShutter = actors_base.Actor:extend{
+    name = 'stone door shutter',
     sprite_name = 'stone_door_shutter',
     anchor = Vector(16, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -423,6 +431,7 @@ end
 
 -- wooden wheel (stone doors)
 local WoodenWheel = actors_base.Actor:extend{
+    name = 'wooden wheel',
     sprite_name = 'wooden_wheel',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
@@ -458,6 +467,7 @@ end
 
 -- inventory items
 local TomeOfLevitation = actors_base.Actor:extend{
+    name = 'tome of levitation',
     sprite_name = 'tome_of_levitation',
     anchor = Vector(0, 0),
     shape = whammo_shapes.Box(0, 0, 32, 32),
