@@ -212,9 +212,7 @@ local MobileActor = Actor:extend{
 
 function MobileActor:_do_physics(dt)
     -- Passive adjustments
-    if math.abs(self.velocity.x) > self.max_speed then
-        self.velocity.x = util.sign(self.velocity.x) * self.max_speed
-    elseif math.abs(self.velocity.x) < self.min_speed then
+    if math.abs(self.velocity.x) < self.min_speed then
         self.velocity.x = 0
     end
 
