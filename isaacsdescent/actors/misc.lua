@@ -15,8 +15,6 @@ local whammo_shapes = require 'klinklang.whammo.shapes'
 local SpikesUp = actors_base.Actor:extend{
     name = 'spikes_up',
     sprite_name = 'spikes_up',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 24, 32, 8),
 }
 
 function SpikesUp:blocks(actor, d)
@@ -39,9 +37,6 @@ end
 local WoodenSwitch = actors_base.Actor:extend{
     name = 'wooden_switch',
     sprite_name = 'wooden_switch',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
-    -- TODO p8 has a "switched" pose
 
     -- TODO usesprite = declare_sprite{2},
 
@@ -74,8 +69,6 @@ end
 local MagicalBridge = actors_base.Actor:extend{
     name = 'magical_bridge',
     sprite_name = 'magical_bridge',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 8),
 }
 
 function MagicalBridge:init(position)
@@ -128,8 +121,6 @@ end
 local Savepoint = actors_base.Actor:extend{
     name = 'savepoint',
     sprite_name = 'savepoint',
-    anchor = Vector(16, 16),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
     -- TODO z?  should always be in background
 }
 
@@ -168,8 +159,6 @@ local Laser = actors_base.Actor:extend{
     name = 'laser_vert',
     sprite_name = 'laser_vert',
     fullbright = true,
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(14, 0, 4, 32),
 
     laser_length = 0,
     laser_vector = Vector.zero,
@@ -240,8 +229,6 @@ end
 local LaserEye = actors_base.MobileActor:extend{
     name = 'laser_eye',
     sprite_name = 'laser_eye',
-    anchor = Vector(16, 16),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     sensor_range = 64,
     sleep_timer = 0,
@@ -320,8 +307,6 @@ end
 local StoneDoor = actors_base.Actor:extend{
     name = 'stone_door',
     sprite_name = 'stone_door',
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     door_height = 0,
     busy = false,
@@ -341,7 +326,7 @@ function StoneDoor:on_enter()
     if impactdist == math.huge then
         impactdist = 0
     end
-    self:set_shape(whammo_shapes.Box(0, 0, 32, impactdist))
+    self:set_shape(whammo_shapes.Box(-12, 0, 24, impactdist))
     self.door_height = impactdist
 end
 
@@ -353,7 +338,7 @@ function StoneDoor:update(dt)
 end
 
 function StoneDoor:draw()
-    local pt = self.pos - self.anchor
+    local pt = self.pos - self.sprite.anchor
     love.graphics.push('all')
     -- FIXME maybe worldscene needs a helper for this
     love.graphics.setScissor(pt.x - worldscene.camera.x, pt.y - worldscene.camera.y, 32, self.door_height)
@@ -364,7 +349,7 @@ function StoneDoor:draw()
         local sprite = self.sprite.anim
         if y == bottom - 32 then
             -- FIXME invasive...
-            sprite = self.sprite.spriteset.poses['end'].right
+            sprite = self.sprite.spriteset.poses['end'].right.animation
         end
         sprite:draw(self.sprite.spriteset.image, pt.x, y)
     end
@@ -391,11 +376,11 @@ function StoneDoor:open()
     local time = height / 30
     worldscene.fluct:to(self, time, { door_height = 32 })
         :ease('linear')
-        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
         :after(time, { door_height = height })
         :delay(4)
         :ease('linear')
-        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
         :oncomplete(function() self.busy = false end)
 end
 
@@ -404,8 +389,6 @@ end
 local StoneDoorShutter = actors_base.Actor:extend{
     name = 'stone door shutter',
     sprite_name = 'stone_door_shutter',
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 }
 
 function StoneDoorShutter:init(...)
@@ -413,7 +396,9 @@ function StoneDoorShutter:init(...)
 end
 
 function StoneDoorShutter:on_enter()
-    local door = StoneDoor(self.pos + Vector(0, 32))
+    -- FIXME this number is kind of arbitrarily based on the arbitrary anchors
+    -- i gave both the shutter and the door, hmm
+    local door = StoneDoor(self.pos + Vector(0, 16))
     self.ptrs.door = door
     worldscene:add_actor(door)
 end
@@ -433,8 +418,6 @@ end
 local WoodenWheel = actors_base.Actor:extend{
     name = 'wooden wheel',
     sprite_name = 'wooden_wheel',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     is_usable = true,
 }
@@ -469,8 +452,6 @@ end
 local TomeOfLevitation = actors_base.Actor:extend{
     name = 'tome of levitation',
     sprite_name = 'tome_of_levitation',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
     is_floating = true,
 
     -- inventory

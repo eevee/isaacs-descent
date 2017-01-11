@@ -12,8 +12,6 @@ local actors_misc2 = require 'isaacsdescent.actors.misc'
 
 local Player = actors_base.MobileActor:extend{
     name = 'isaac',
-    shape = whammo_shapes.Box(8, 16, 20, 46),
-    anchor = Vector(19, 62),
     sprite_name = 'isaac',
 
     is_player = true,
