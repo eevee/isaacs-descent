@@ -196,6 +196,8 @@ local MobileActor = Actor:extend{
     friction = 1/16 * PICO8A,  -- not actually from pico8
     ground_friction = 1,
     max_slope = Vector(1, 1),
+    gravity_multiplier = 1,
+    gravity_multiplier_down = 1,
 
     -- Active physics parameters
     -- TODO these are a little goofy because friction works differently; may be
@@ -219,6 +221,9 @@ function MobileActor:_do_physics(dt)
         self.velocity.x = 0
     end
 
+    -- FIXME i feel like these two are kinda crap, especially given how
+    -- max_speed works.  something about my physics is just not right.  check
+    -- sonic wiki?
     -- Friction -- the general tendency for everything to decelerate.
     -- It always pushes against the direction of motion, but never so much that
     -- it would reverse the motion.  Note that taking the dot product with the
@@ -256,7 +261,11 @@ function MobileActor:_do_physics(dt)
         end
 
         -- Gravity
-        self.velocity = self.velocity + gravity * dt
+        local mult = self.gravity_multiplier
+        if self.velocity.y > 0 then
+            mult = mult * self.gravity_multiplier_down
+        end
+        self.velocity = self.velocity + gravity * mult * dt
         self.velocity.y = math.min(self.velocity.y, terminal_velocity)
         --print("velocity after gravity:", self.velocity)
     end

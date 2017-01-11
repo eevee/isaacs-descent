@@ -268,6 +268,7 @@ function WireSocket:on_enter()
     worldscene:add_actor(plug)
 end
 
+-- TODO it would be nice if we could be notified when our plug is removed
 function WireSocket:on_use(activator)
     -- TODO game-specific
 end
