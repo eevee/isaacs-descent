@@ -108,9 +108,14 @@ function Wirable:_receive_pulse(value, source)
 
     if orig == 0 and self.powered > 0 then
         self._pending_pulse = true
+        self:on_power_change(true)
     elseif orig > 0 and self.powered == 0 then
         self._pending_pulse = false
+        self:on_power_change(false)
     end
+end
+
+function Wirable:on_power_change(active)
 end
 
 function Wirable:update(dt)
@@ -232,10 +237,8 @@ local Bulb = Wirable:extend{
     can_emit = false,
 }
 
-function Bulb:_receive_pulse(value, source)
-    Wirable._receive_pulse(self, value, source)
-
-    if self.powered > 0 then
+function Bulb:on_power_change(active)
+    if active then
         self.sprite:set_pose('on')
     else
         self.sprite:set_pose('off')
