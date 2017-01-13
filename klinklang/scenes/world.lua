@@ -1,9 +1,11 @@
 local flux = require 'vendor.flux'
+local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 
 local actors_base = require 'klinklang.actors.base'
 local Player = require 'klinklang.actors.player'
 local BaseScene = require 'klinklang.scenes.base'
+local PauseScene = require 'klinklang.scenes.pause'
 local whammo = require 'klinklang.whammo'
 
 local tiledmap = require 'klinklang.tiledmap'
@@ -268,6 +270,9 @@ function WorldScene:keypressed(key, scancode, isrepeat)
         elseif self.player.inventory_cursor > 0 then
             self.player.inventory[self.player.inventory_cursor]:on_inventory_use(self.player)
         end
+    elseif key == 'pause' then
+        -- FIXME ignore if modifiers?
+        Gamestate.push(PauseScene())
     end
 end
 
