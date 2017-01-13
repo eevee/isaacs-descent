@@ -31,19 +31,8 @@ function WorldScene:init(...)
 end
 
 function WorldScene:_refresh_canvas()
-    self:_determine_scale()
-    local w, h = self:getDimensions()
+    local w, h = game:getDimensions()
     self.canvas = love.graphics.newCanvas(w, h)
-end
-
-function WorldScene:_determine_scale()
-    -- Default resolution is 640 × 360, which is half of 720p and a third of
-    -- 1080p and equal to 40 × 22.5 tiles.  With some padding, I get these as
-    -- the max viewport size.
-    local w, h = love.graphics.getDimensions()
-    local MAX_WIDTH = 50 * 16
-    local MAX_HEIGHT = 30 * 16
-    self.scale = math.ceil(math.max(w / MAX_WIDTH, h / MAX_HEIGHT))
 end
 
 function WorldScene:update(dt)
@@ -73,7 +62,6 @@ function WorldScene:update(dt)
         actor:update(dt)
     end
 
-    local w, h = love.graphics.getDimensions()
     self:update_camera()
 end
 
@@ -87,7 +75,7 @@ function WorldScene:update_camera()
     -- catching up with the player, platform snapping?
     if self.player then
         local focus = self.player.pos
-        local w, h = self:getDimensions()
+        local w, h = game:getDimensions()
         local mapx, mapy = 0, 0
         local marginx = CAMERA_MARGIN * w
         local marginy = CAMERA_MARGIN * h
@@ -114,7 +102,7 @@ function WorldScene:update_camera()
 end
 
 function WorldScene:draw()
-    local w, h = self:getDimensions()
+    local w, h = game:getDimensions()
     love.graphics.setCanvas(self.canvas)
 
     love.graphics.push('all')
@@ -228,12 +216,13 @@ end
 function WorldScene:_draw_blockmap()
     love.graphics.push('all')
     love.graphics.setColor(255, 255, 255, 64)
+    love.graphics.scale(game.scale, game.scale)
 
     local blockmap = self.collider.blockmap
     local blocksize = blockmap.blocksize
     local x0 = -self.camera.x % blocksize
     local y0 = -self.camera.y % blocksize
-    local w, h = love.graphics.getDimensions()
+    local w, h = game:getDimensions()
     for x = x0, w, blocksize do
         love.graphics.line(x, 0, x, h)
     end
@@ -284,10 +273,6 @@ end
 
 --------------------------------------------------------------------------------
 -- API
-
-function WorldScene:getDimensions()
-    return love.graphics.getWidth() / self.scale, love.graphics.getHeight() / self.scale
-end
 
 function WorldScene:load_map(map)
     self.collider = whammo.Collider(4 * map.tilewidth)
