@@ -17,6 +17,10 @@ local Player = actors_base.MobileActor:extend{
     is_player = true,
 
     inventory_cursor = 1,
+
+    -- Conscious movement decisions
+    decision_walk = 0,
+    decision_jump_mode = 0,
 }
 
 function Player:init(...)
@@ -52,6 +56,29 @@ function Player:init(...)
 
 end
 
+-- "Thinking" API
+-- Totally not sure about this yet, but it seems handy for critter AI.
+
+-- Decide to start walking in the given direction.  -1 for left, 1 for right,
+-- or 0 to stop walking.  Persists until changed.
+function Player:decide_walk(direction)
+    self.decision_walk = direction
+end
+
+-- Decide to jump.
+function Player:decide_jump()
+    -- Jumping has three states:
+    -- 2: starting to jump
+    -- 1: continuing a jump
+    -- 0: not jumping (i.e., falling)
+    self.decision_jump_mode = 2
+end
+
+-- Decide to abandon an ongoing jump, if any, which may reduce the jump height.
+function Player:decide_abandon_jump()
+    self.decision_jump_mode = 0
+end
+
 function Player:update(dt)
     if self.is_dead then
         -- FIXME a corpse still has physics, just not input
@@ -74,7 +101,7 @@ function Player:update(dt)
     -- Explicit movement
     -- TODO should be whichever was pressed last?
     local pose = 'stand'
-    if love.keyboard.isDown('right') then
+    if self.decision_walk > 0 then
         -- FIXME hmm is this the right way to handle a maximum walking speed?
         -- it obviously doesn't work correctly in another frame of reference
         if self.velocity.x < self.max_speed then
@@ -82,7 +109,7 @@ function Player:update(dt)
         end
         self.facing_left = false
         pose = 'walk'
-    elseif love.keyboard.isDown('left') then
+    elseif self.decision_walk < 0 then
         if self.velocity.x > -self.max_speed then
             self.velocity.x = self.velocity.x - self.xaccel * xmult * dt
         end
@@ -94,7 +121,8 @@ function Player:update(dt)
     -- This uses the Sonic approach: pressing jump immediately sets (not
     -- increases!) the player's y velocity, and releasing jump lowers the y
     -- velocity to a threshold
-    if love.keyboard.isDown('space') then
+    if self.decision_jump_mode == 2 then
+        self.decision_jump_mode = 1
         if self.on_ground then
             if self.velocity.y > -self.jumpvel then
                 self.velocity.y = -self.jumpvel
@@ -102,7 +130,7 @@ function Player:update(dt)
                 game.resource_manager:get('assets/sounds/jump.ogg'):play()
             end
         end
-    else
+    elseif self.decision_jump_mode == 0 then
         if not self.on_ground then
             self.velocity.y = math.max(self.velocity.y, -self.jumpvel * self.jumpcap)
         end
