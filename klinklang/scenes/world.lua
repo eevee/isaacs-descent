@@ -1,4 +1,5 @@
 local flux = require 'vendor.flux'
+local tick = require 'vendor.tick'
 local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 
@@ -20,6 +21,7 @@ local WorldScene = BaseScene:extend{
 
     music = nil,
     fluct = nil,
+    tick = nil,
 
     was_left_down = false,
     was_right_down = false,
@@ -57,6 +59,24 @@ function WorldScene:update(dt)
     -- last frame.
     local is_left_down = love.keyboard.isScancodeDown('left')
     local is_right_down = love.keyboard.isScancodeDown('right')
+    -- FIXME should probably have some notion of a "current gamepad"?  should
+    -- only one control scheme work at a time?  how is this usually handled omg
+    for i, joystick in ipairs(love.joystick.getJoysticks()) do
+        if joystick:isGamepad() then
+            if joystick:isGamepadDown('dpleft') then
+                is_left_down = true
+            end
+            if joystick:isGamepadDown('dpright') then
+                is_right_down = true
+            end
+            local axis = joystick:getGamepadAxis('leftx')
+            if axis < -0.25 then
+                is_left_down = true
+            elseif axis > 0.25 then
+                is_right_down = true
+            end
+        end
+    end
     if is_left_down and is_right_down then
         if self.was_left_down and self.was_right_down then
             -- Continuing to hold both keys; do nothing
@@ -84,8 +104,31 @@ function WorldScene:update(dt)
     -- but /continuing/ to jump is a continuous action.  So we handle the
     -- initial jump in keypressed, but abandon a jump here as soon as the key
     -- is no longer held.
-    if not love.keyboard.isScancodeDown('space') then
+    local still_jumping = false
+    if love.keyboard.isScancodeDown('space') then
+        still_jumping = true
+    end
+    for i, joystick in ipairs(love.joystick.getJoysticks()) do
+        if joystick:isGamepad() then
+            if joystick:isGamepadDown('a') then
+                still_jumping = true
+            end
+        end
+    end
+    if not still_jumping then
         self.player:decide_abandon_jump()
+    end
+
+    if self.player.ptrs.chip then
+        local chip_fire = love.keyboard.isDown('d')
+        for i, joystick in ipairs(love.joystick.getJoysticks()) do
+            if joystick:isGamepad() then
+                if joystick:isGamepadDown('b') then
+                    chip_fire = true
+                end
+            end
+        end
+        self.player.ptrs.chip:decide_fire(chip_fire)
     end
 
     if love.keyboard.isDown(',') then
@@ -100,6 +143,7 @@ function WorldScene:update(dt)
     end
 
     self.fluct:update(dt)
+    self.tick:update(dt)
 
     -- TODO i can't tell if this belongs here.  probably not, since it /should/
     -- do a fadeout.  maybe on the game object itself?
@@ -332,6 +376,18 @@ function WorldScene:keypressed(key, scancode, isrepeat)
     end
 end
 
+function WorldScene:gamepadpressed(joystick, button)
+    if button == 'a' then
+        self.player:decide_jump()
+    elseif button == 'x' then
+        -- Use inventory item, or nearby thing
+        if self.player.touching_mechanism then
+            self.player.touching_mechanism:on_use(self.player)
+        end
+    end
+end
+
+
 --------------------------------------------------------------------------------
 -- API
 
@@ -340,6 +396,7 @@ function WorldScene:load_map(map)
     self.map = map
     self.actors = {}
     self.fluct = flux.group()
+    self.tick = tick.group()
 
     -- TODO this seems clearly wrong, especially since i don't clear the
     -- collider, but it happens to work (i think)
