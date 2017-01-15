@@ -117,7 +117,6 @@ function love.load(args)
 end
 
 function love.draw()
-    love.graphics.print(tostring(love.timer.getFPS( )), 10, 10)
 end
 
 local _previous_mode
