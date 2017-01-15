@@ -9,6 +9,12 @@ local tiledmap = require 'klinklang.tiledmap'
 
 
 game = {
+    TILE_SIZE = 32,
+
+    progress = {
+        flags = {},
+    },
+
     debug = false,
     resource_manager = nil,
     -- FIXME this seems ugly, but the alternative is to have sprite.lua implicitly depend here

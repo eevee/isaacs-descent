@@ -13,6 +13,8 @@ local actors_misc2 = require 'isaacsdescent.actors.misc'
 local Player = actors_base.MobileActor:extend{
     name = 'isaac',
     sprite_name = 'isaac',
+    dialogue_position = 'left',
+    dialogue_sprite_name = 'isaac portrait',
 
     is_player = true,
 
