@@ -15,6 +15,7 @@ local Player = actors_base.MobileActor:extend{
     sprite_name = 'isaac',
     dialogue_position = 'left',
     dialogue_sprite_name = 'isaac portrait',
+    z = 1000,
 
     is_player = true,
 
