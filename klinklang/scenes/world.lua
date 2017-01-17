@@ -234,6 +234,10 @@ function WorldScene:draw()
     love.graphics.push('all')
     love.graphics.translate(-self.camera.x, -self.camera.y)
 
+    -- TODO later this can expand into drawing all the layers automatically
+    -- (the main problem is figuring out where exactly the actor layer lives)
+    self.map:draw_parallax_background(self.camera, w, h)
+
     -- TODO once the camera is set up, consider rigging the map to somehow
     -- auto-expand to fill the screen?
     -- FIXME don't really like hardcoding layer names here; they /have/ an
