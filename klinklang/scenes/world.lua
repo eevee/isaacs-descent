@@ -273,11 +273,8 @@ function WorldScene:draw()
         love.graphics.setColor(255, 255, 255)
         -- FIXME stop hardcoding fuckin layer names
         self.map:draw(self.submap, self.camera, w, h)
-        for _, actor in ipairs(self.actors) do
-            self:_draw_actors(self.actors)
-        end
+        self:_draw_actors(self.actors)
     end
-
 
     if game.debug then
         --[[
