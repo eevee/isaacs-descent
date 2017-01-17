@@ -125,7 +125,7 @@ function WorldScene:update(dt)
     end
 
     if self.player.ptrs.chip then
-        local chip_fire = love.keyboard.isDown('d')
+        local chip_fire = love.keyboard.isScancodeDown('d')
         for i, joystick in ipairs(love.joystick.getJoysticks()) do
             if joystick:isGamepad() then
                 if joystick:isGamepadDown('b') then
@@ -406,7 +406,7 @@ function WorldScene:keypressed(key, scancode, isrepeat)
 
     if scancode == 'space' then
         self.player:decide_jump()
-    elseif key == 'q' then
+    elseif scancode == 'q' then
         -- Switch inventory items
         if not self.inventory_switch then
             local old_item = self.player.inventory[self.player.inventory_cursor]
@@ -420,7 +420,7 @@ function WorldScene:keypressed(key, scancode, isrepeat)
                 progress = 0
             }
         end
-    elseif key == 'e' then
+    elseif scancode == 'e' then
         -- Use inventory item, or nearby thing
         -- FIXME this should be separate keys maybe?
         if self.player.touching_mechanism then
@@ -428,7 +428,7 @@ function WorldScene:keypressed(key, scancode, isrepeat)
         elseif self.player.inventory_cursor > 0 then
             self.player.inventory[self.player.inventory_cursor]:on_inventory_use(self.player)
         end
-    elseif key == 'pause' then
+    elseif scancode == 'pause' then
         -- FIXME ignore if modifiers?
         Gamestate.push(PauseScene())
     end
