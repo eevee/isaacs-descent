@@ -35,6 +35,10 @@ function WorldScene:init(...)
 
     self.camera = Vector()
     self:_refresh_canvas()
+
+    -- FIXME well, i guess, don't actually fix me, but, this is used to stash
+    -- entire maps atm too
+    self.stashed_submaps = {}
 end
 
 function WorldScene:_refresh_canvas()
@@ -157,7 +161,7 @@ function WorldScene:update(dt)
 
     -- Update the music to match the player's current position
     local x, y = self.player.pos:unpack()
-    local new_music
+    local new_music = false
     for shape, music in pairs(self.map.music_zones) do
         -- FIXME don't have a real api for this yet oops
         local x0, y0, x1, y1 = shape:bbox()
@@ -168,6 +172,8 @@ function WorldScene:update(dt)
     end
     if self.music == new_music then
         -- Do nothing
+    elseif new_music == false then
+        -- Didn't find a zone at all; keep current music
     elseif self.music == nil then
         new_music:setLooping(true)
         new_music:play()
@@ -176,7 +182,7 @@ function WorldScene:update(dt)
         self.music:stop()
         self.music = nil
     else
-        -- FIXME crossfade
+        -- FIXME crossfade?
         new_music:setLooping(true)
         new_music:play()
         new_music:seek(self.music:tell())
@@ -439,13 +445,26 @@ end
 -- API
 
 function WorldScene:load_map(map)
-    self.collider = whammo.Collider(4 * map.tilewidth)
     self.map = map
-    self.actors = {}
     self.music = nil
-    self.stashed_submaps = {}
     self.fluct = flux.group()
     self.tick = tick.group()
+
+    if self.stashed_submaps[map] then
+        self.actors = self.stashed_submaps[map].actors
+        self.collider = self.stashed_submaps[map].collider
+        self.camera = self.player.pos:clone()
+        self:update_camera()
+        -- XXX this is really half-assed, relies on the caller to add the player back to the map too
+        return
+    end
+
+    self.actors = {}
+    self.collider = whammo.Collider(4 * map.tilewidth)
+    self.stashed_submaps[map] = {
+        actors = self.actors,
+        collider = self.collider,
+    }
 
     -- TODO this seems clearly wrong, especially since i don't clear the
     -- collider, but it happens to work (i think)
@@ -496,6 +515,8 @@ function WorldScene:load_map(map)
     end
 
     self.camera = self.player.pos:clone()
+
+    self:update_camera()
 end
 
 function WorldScene:reload_map()

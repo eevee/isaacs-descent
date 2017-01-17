@@ -1,6 +1,7 @@
 local utf8 = require 'utf8'
 
 local Gamestate = require 'vendor.hump.gamestate'
+local tick = require 'vendor.tick'
 
 local ResourceManager = require 'klinklang.resources'
 local WorldScene = require 'klinklang.scenes.world'
@@ -119,6 +120,10 @@ function love.load(args)
     Gamestate.switch(worldscene)
     --local tmpscene = DialogueScene(worldscene)
     --Gamestate.switch(tmpscene)
+end
+
+function love.update(dt)
+    tick.update(dt)
 end
 
 function love.draw()
