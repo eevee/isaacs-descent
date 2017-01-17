@@ -112,6 +112,7 @@ function WorldScene:update(dt)
         if joystick:isGamepad() then
             if joystick:isGamepadDown('a') then
                 still_jumping = true
+                break
             end
         end
     end
@@ -418,6 +419,13 @@ function WorldScene:gamepadpressed(joystick, button)
     end
 end
 
+
+function WorldScene:mousepressed(x, y, button, istouch)
+    if button == 3 then
+        self.player.pos.x = x / game.scale + self.camera.x
+        self.player.pos.y = y / game.scale + self.camera.y
+    end
+end
 
 --------------------------------------------------------------------------------
 -- API
