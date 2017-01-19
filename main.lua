@@ -93,6 +93,8 @@ function love.load(args)
     --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
     love.graphics.setFont(m5x7)
 
+    love.joystick.loadGamepadMappings("vendor/gamecontrollerdb.txt")
+
     resource_manager:load('assets/sounds/jump.ogg')
 
     game.maps = {
