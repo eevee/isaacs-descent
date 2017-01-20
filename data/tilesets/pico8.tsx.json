@@ -13,6 +13,10 @@
         {
          "actor":"magical_bridge"
         },
+     "46":
+        {
+         "actor":"stone door shutter"
+        },
      "50":
         {
          "actor":"tome of levitation"
@@ -25,6 +29,10 @@
         {
          "actor":"laser_eye"
         },
+     "62":
+        {
+         "actor":"wooden wheel"
+        },
      "8":
         {
          "actor":"spikes_up"
@@ -33,6 +41,10 @@
  "tilepropertytypes":
     {
      "42":
+        {
+         "actor":"string"
+        },
+     "46":
         {
          "actor":"string"
         },
@@ -45,6 +57,10 @@
          "actor":"string"
         },
      "58":
+        {
+         "actor":"string"
+        },
+     "62":
         {
          "actor":"string"
         },
@@ -253,6 +269,33 @@
             }
         },
      "37":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "43":
         {
          "objectgroup":
             {

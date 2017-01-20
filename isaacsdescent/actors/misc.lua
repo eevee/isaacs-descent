@@ -369,6 +369,156 @@ function LaserEye:update(dt)
 end
 
 
+local StoneDoor = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'stone_door',
+    anchor = Vector(16, 0),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+
+    door_height = 0,
+    busy = false,
+}
+
+-- FIXME what happens if you stick a rune in an open doorway?
+function StoneDoor:on_spawn()
+    -- FIXME this "ray" should really have a /width/
+    local impact, impactdist = worldscene.collider:fire_ray(
+        self.pos,
+        Vector(0, 1),
+        function (actor)
+            return actor == self
+        end)
+    -- FIXME if the ray doesn't hit anything, it returns...  infinity.  also it
+    -- doesn't actually walk the whole blockmap, oops!
+    if impactdist == math.huge then
+        impactdist = 0
+    end
+    self:set_shape(whammo_shapes.Box(0, 0, 32, impactdist))
+    self.door_height = impactdist
+end
+
+function StoneDoor:blocks()
+    return true
+end
+
+function StoneDoor:update(dt)
+end
+
+function StoneDoor:draw()
+    local pt = self.pos - self.anchor
+    love.graphics.push('all')
+    -- FIXME maybe worldscene needs a helper for this
+    love.graphics.setScissor(pt.x - worldscene.camera.x, pt.y - worldscene.camera.y, 32, self.door_height)
+    local height = self.door_height + (-self.door_height) % 32
+    local top = pt.y - (-self.door_height) % 32
+    local bottom = pt.y + self.door_height, 32
+    for y = top, bottom, 32 do
+        local sprite = self.sprite.anim
+        if y == bottom - 32 then
+            sprite = self.sprite.sprite.poses['end/right']
+        end
+        sprite:draw(self.sprite.sprite.image, pt.x, y)
+    end
+    love.graphics.pop()
+    --pt = pt + Vector(0, 1) * self.door_height
+    --:draw(self.sprite.sprite.image, pt.x, pt.y, 0, 1, 1)
+    --local coll = self:coll()
+    --rectfill(coll.l * 8, coll.t * 8, coll.r * 8 - 1, coll.b * 8 - 1, 8)
+end
+
+function StoneDoor:open()
+    if self.busy then
+        return
+    end
+    self.busy = true
+    if self.door_height <= 32 then
+        return
+    end
+
+    -- FIXME i would like some little dust clouds
+    -- FIXME grinding noise
+    -- FIXME what happens if the door hits something?
+    local height = self.door_height
+    local time = height / 30
+    worldscene.fluct:to(self, time, { door_height = 32 })
+        :ease('linear')
+        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :after(time, { door_height = height })
+        :delay(4)
+        :ease('linear')
+        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :oncomplete(function() self.busy = false end)
+end
+
+
+-- TODO this should probably have a cute canon name
+local StoneDoorShutter = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'stone_door_shutter',
+    anchor = Vector(16, 0),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+}
+
+function StoneDoorShutter:init(...)
+    actors_base.Actor.init(self, ...)
+end
+
+function StoneDoorShutter:on_spawn()
+    local door = StoneDoor(self.pos + Vector(0, 32))
+    self.ptrs.door = door
+    worldscene:add_actor(door)
+end
+
+function StoneDoorShutter:blocks(actor, dir)
+    return true
+end
+
+function StoneDoorShutter:on_activate()
+    self.sprite:set_pose('active/right')
+    -- FIXME original code plays animation (and stays unusable) for one second
+    self.ptrs.door:open()
+end
+
+
+-- wooden wheel (stone doors)
+local WoodenWheel = Class{
+    __includes = actors_base.Actor,
+
+    sprite_name = 'wooden_wheel',
+    anchor = Vector(0, 0),
+    shape = whammo_shapes.Box(0, 0, 32, 32),
+
+    is_usable = true,
+}
+
+-- TODO nothing calls this
+function WoodenWheel:reset()
+    self.is_usable = true
+    self:set_pose"default"
+end
+
+function WoodenWheel:on_use(activator)
+    -- TODO sfx(4)
+    self.sprite:set_pose('turning/right')
+    self.is_usable = false
+
+    -- TODO probably wants a real API
+    -- TODO worldscene is a global...
+    -- FIXME oops, this will activate both doors /and/ bridges
+    for _, actor in ipairs(worldscene.actors) do
+        -- TODO would be nice if this could pick more specific targets, not just the entire map
+        if actor.on_activate then
+            actor:on_activate()
+        end
+    end
+
+    -- FIXME this should really use the tick library
+    worldscene.fluct:to(self, 1, {}):oncomplete(function() self.sprite:set_pose('default/right') self.is_usable = true end)
+end
+
+
 -- inventory items
 local TomeOfLevitation = Class{
     __includes = actors_base.Actor,
@@ -418,5 +568,7 @@ return {
     MagicalBridge = MagicalBridge,
     Savepoint = Savepoint,
     LaserEye = LaserEye,
+    StoneDoorShutter = StoneDoorShutter,
+    WoodenWheel = WoodenWheel,
     TomeOfLevitation = TomeOfLevitation,
 }

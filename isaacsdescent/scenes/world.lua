@@ -1,3 +1,4 @@
+local flux = require 'vendor.flux'
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
@@ -16,19 +17,18 @@ local actors_lookup = {
     magical_bridge = actors_misc.MagicalBridge,
     wooden_switch = actors_misc.WoodenSwitch,
     laser_eye = actors_misc.LaserEye,
+    ['stone door shutter'] = actors_misc.StoneDoorShutter,
+    ['wooden wheel'] = actors_misc.WoodenWheel,
     ['tome of levitation'] = actors_misc.TomeOfLevitation,
 }
 
 local WorldScene = Class{
     __includes = BaseScene,
     __tostring = function(self) return "worldscene" end,
+
+    music = nil,
+    fluct = nil,
 }
-
-function WorldScene:init(map)
-    BaseScene.init(self)
-
-    self:load_map(map)
-end
 
 --------------------------------------------------------------------------------
 -- hump.gamestate hooks
@@ -44,6 +44,8 @@ function WorldScene:update(dt)
             self.inventory_switch = nil
         end
     end
+
+    self.fluct:update(dt)
 
     -- TODO i can't tell if this belongs here.  probably not, since it /should/
     -- do a fadeout.  maybe on the game object itself?
@@ -224,6 +226,7 @@ function WorldScene:load_map(map)
     self.collider = whammo.Collider(4 * map.tilewidth)
     self.map = map
     self.actors = {}
+    self.fluct = flux.group()
 
     -- TODO this seems clearly wrong, especially since i don't clear the
     -- collider, but it happens to work (i think)
