@@ -87,9 +87,20 @@ function Actor:on_collide(actor, direction)
 end
 
 -- General API stuff for controlling actors from outside
-
 function Actor:move_to(position)
     self.pos = position
+    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
+end
+
+function Actor:set_shape(new_shape)
+    if self.shape then
+        worldscene.collider:remove(self.shape)
+    end
+    self.shape = new_shape
+    if self.shape then
+        worldscene.collider:add(self.shape, self)
+        self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
+    end
 end
 
 
@@ -285,12 +296,6 @@ end
 
 function MobileActor:blocks(actor, d)
     return true
-end
-
-function MobileActor:move_to(position)
-    Actor.move_to(self, position)
-
-    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
 end
 
 

@@ -242,11 +242,7 @@ function Laser:update(dt)
         end)
     self.laser_length = impactdist
     self.laser_vector = self.laser_direction * impactdist
-    -- FIXME need a real way to do this
-    worldscene.collider:remove(self.shape)
-    self.shape = whammo_shapes.Box(14, 0, 4, self.laser_length)
-    self.shape:move_to((self.pos - self.anchor + self.initial_shape_offset):unpack())
-    worldscene.collider:add(self.shape, self)
+    self:set_shape(whammo_shapes.Box(14, 0, 4, self.laser_length))
 
     if math.random() < 0.1 then
         -- TODO should rotate this to face back along laser vector
