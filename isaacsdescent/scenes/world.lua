@@ -133,6 +133,10 @@ function WorldScene:draw()
 
     love.graphics.pop()
 
+    if game.debug then
+        self:_draw_blockmap()
+    end
+
     love.graphics.push('all')
 
     love.graphics.draw(p8_spritesheet, love.graphics.newQuad(192, 128, 64, 64, p8_spritesheet:getDimensions()), 0, 0)
@@ -156,6 +160,32 @@ function WorldScene:draw()
     --love.graphics.rectangle('fill', 64, 32 - name:getHeight() / 2, name:getWidth(), name:getHeight())
     --love.graphics.setColor(255, 255, 255)
     --love.graphics.draw(name, 64, 32 - name:getHeight() / 2)
+
+    love.graphics.pop()
+end
+
+function WorldScene:_draw_blockmap()
+    love.graphics.push('all')
+    love.graphics.setColor(255, 255, 255, 64)
+
+    local blockmap = self.collider.blockmap
+    local blocksize = blockmap.blocksize
+    local x0 = -self.camera.x % blocksize
+    local y0 = -self.camera.y % blocksize
+    local w, h = love.graphics.getDimensions()
+    for x = x0, w, blocksize do
+        love.graphics.line(x, 0, x, h)
+    end
+    for y = y0, h, blocksize do
+        love.graphics.line(0, y, w, y)
+    end
+
+    for x = x0, w, blocksize do
+        for y = y0, h, blocksize do
+            local a, b = blockmap:to_block_units(self.camera.x + x, self.camera.y + y)
+            love.graphics.print((" %d, %d"):format(a, b), x, y)
+        end
+    end
 
     love.graphics.pop()
 end
