@@ -54,9 +54,9 @@ function Blockmap:add(obj)
     self.bboxes[obj] = {x0, y0, x1, y1}
 
     self.min_x = math.min(self.min_x, x0)
-    self.max_x = math.min(self.max_x, x1)
+    self.max_x = math.max(self.max_x, x1)
     self.min_y = math.min(self.min_y, y0)
-    self.max_y = math.min(self.max_y, y1)
+    self.max_y = math.max(self.max_y, y1)
 end
 
 function Blockmap:remove(obj)
@@ -106,7 +106,11 @@ function Blockmap:neighbors(obj, dx, dy)
     return ret
 end
 
--- 
+-- FIXME this should take a ray width too
+-- FIXME there is probably a smarter way to do this?
+-- FIXME would like a visualization of this because i don't totally trust it
+-- FIXME checks many of the same blocks twice, seen_blocks is unused
+-- FIXME walks the entire map even if the nearest neighbor might be right next to us, hm
 function Blockmap:neighbors_along_ray(x, y, dx, dy)
     local ex = self.blocksize / 32
     local ey = ex
