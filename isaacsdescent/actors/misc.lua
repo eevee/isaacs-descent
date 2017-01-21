@@ -1,60 +1,14 @@
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
-local actors_base = require 'isaacsdescent.actors.base'
-local whammo_shapes = require 'isaacsdescent.whammo.shapes'
+local actors_base = require 'klinklang.actors.base'
+local actors_misc = require 'klinklang.actors.misc'
+local whammo_shapes = require 'klinklang.whammo.shapes'
 
 -- TODO some overall questions about this setup:
 -- 1. where should anchors and collision boxes live?  here?  on the sprites?  can i cram that into tiled?
 -- 2. where are sprites even defined?  also in tiled, i guess?
 -- 3. do these actors use the sprites given on the map, or what?  do they also name their own sprites?  can those conflict?
-
-
--- TODO this doesn't do most things an actor does, which means it has no shape
--- or sprite, which means other code trying to interfere with it might not work
--- so good.  but it also means i have to write my own dummy on_spawn?
--- do i need a BaseActor or something?
-local Particle = Class{}
-
-function Particle:init(position, velocity, acceleration, color, ttl, fadeout)
-    self.pos = position
-    self.velocity = velocity
-    self.acceleration = acceleration
-    self.color = color
-    self.ttl = ttl
-    self.original_ttl = ttl
-    self.fadeout = fadeout
-end
-
-function Particle:on_spawn()
-end
-
-function Particle:update(dt)
-    self.velocity = self.velocity + self.acceleration * dt
-    self.pos = self.pos + self.velocity * dt
-
-    self.ttl = self.ttl - dt
-    if self.ttl < 0 then
-        worldscene:remove_actor(self)
-    end
-end
-
-function Particle:draw()
-    love.graphics.push('all')
-    if self.fadeout then
-        local r, g, b, a = unpack(self.color)
-        if a == nil then
-            a = 255
-        end
-        a = a * (self.ttl / self.original_ttl)
-        love.graphics.setColor(r, g, b, a)
-    else
-        love.graphics.setColor(unpack(self.color))
-    end
-    love.graphics.points(self.pos:unpack())
-    love.graphics.pop()
-end
-
 
 
 -- spikes
@@ -104,7 +58,7 @@ end
 
 function WoodenSwitch:on_use(activator)
     -- TODO sfx(4)
-    self.sprite:set_pose('switched/right')
+    self.sprite:set_pose('switched')
     self.is_usable = false
 
     -- TODO probably wants a real API
@@ -187,7 +141,7 @@ function Savepoint:on_spawn()
     for i = 1, 8 do
         local angle = love.math.random() * 6.28
         local direction = Vector(math.cos(angle), math.sin(angle))
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + direction * 4,
             direction * 32 * love.math.random(0.75, 1),
             Vector(0, 1),
@@ -203,7 +157,7 @@ function Savepoint:update(dt)
     if love.math.random() < 0.0625 then
         local angle = love.math.random() * 6.28
         local direction = Vector(math.cos(angle), math.sin(angle))
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + direction * 8,
             direction * 16,
             Vector(0, 1),
@@ -251,7 +205,7 @@ function Laser:update(dt)
         if direction * self.laser_vector > 0 then
             direction = -direction
         end
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + self.laser_vector,
             direction * 64,
             Vector.zero,
@@ -318,7 +272,7 @@ end
 function LaserEye:sleep()
     self.is_awake = false
     self.sleep_timer = 0
-    self.sprite:set_pose('default/right')
+    self.sprite:set_pose('default')
     if self.ptrs.laser then
         worldscene:remove_actor(self.ptrs.laser)
         self.ptrs.laser = nil
@@ -335,7 +289,7 @@ function LaserEye:update(dt)
         dist = sx0 - px1
     end
     if dist < self.sensor_range then
-        self.sprite:set_pose('awake/right')
+        self.sprite:set_pose('awake')
         self.is_awake = true
         self.sleep_timer = 4
         if not self.ptrs.laser then
@@ -416,9 +370,10 @@ function StoneDoor:draw()
     for y = top, bottom, 32 do
         local sprite = self.sprite.anim
         if y == bottom - 32 then
-            sprite = self.sprite.sprite.poses['end/right']
+            -- FIXME invasive...
+            sprite = self.sprite.spriteset.poses['end'].right
         end
-        sprite:draw(self.sprite.sprite.image, pt.x, y)
+        sprite:draw(self.sprite.spriteset.image, pt.x, y)
     end
     love.graphics.pop()
     --pt = pt + Vector(0, 1) * self.door_height
@@ -476,7 +431,7 @@ function StoneDoorShutter:blocks(actor, dir)
 end
 
 function StoneDoorShutter:on_activate()
-    self.sprite:set_pose('active/right')
+    self.sprite:set_pose('active')
     -- FIXME original code plays animation (and stays unusable) for one second
     self.ptrs.door:open()
 end
@@ -501,7 +456,7 @@ end
 
 function WoodenWheel:on_use(activator)
     -- TODO sfx(4)
-    self.sprite:set_pose('turning/right')
+    self.sprite:set_pose('turning')
     self.is_usable = false
 
     -- TODO probably wants a real API
@@ -515,7 +470,7 @@ function WoodenWheel:on_use(activator)
     end
 
     -- FIXME this should really use the tick library
-    worldscene.fluct:to(self, 1, {}):oncomplete(function() self.sprite:set_pose('default/right') self.is_usable = true end)
+    worldscene.fluct:to(self, 1, {}):oncomplete(function() self.sprite:set_pose('default') self.is_usable = true end)
 end
 
 
@@ -537,7 +492,7 @@ function TomeOfLevitation:update(dt)
     -- FIXME this is basically duplicated for isaac, but it's also not really
     -- an appropriate effect here i think?
     if math.random() < dt * 4 then
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + Vector(math.random() * 32, 32), Vector(0, -32), Vector(0, 0),
             {255, 255, 255}, 1.5, true))
     end
@@ -562,7 +517,6 @@ end
 
 
 return {
-    Particle = Particle,
     SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,

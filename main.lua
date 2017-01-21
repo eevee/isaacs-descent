@@ -34,16 +34,26 @@ function love.load(args)
 
     love.graphics.setDefaultFilter('nearest', 'nearest', 1)
 
+    local resource_manager = ResourceManager()
+    resource_manager:register_default_loaders()
+    resource_manager.locked = false  -- TODO make an api for this lol
+    game.resource_manager = resource_manager
+
     -- Load all the graphics upfront
     -- FIXME the savepoint sparkle is wrong, because i have no way to specify
     -- where to loop back to
     dialogueboximg = love.graphics.newImage('assets/images/isaac-dialogue.png')
     dialogueboximg2 = love.graphics.newImage('assets/images/lexy-dialogue.png')
+    -- FIXME evict this global
+    p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
 
     local tspath = 'data/tilesets/pico8.tsx.json'
     local tileset = tiledmap.TiledTileset(tspath, nil, resource_manager)
     resource_manager:add(tspath, tileset)
     local tspath = 'data/tilesets/portraits.tsx.json'
+    local tileset = tiledmap.TiledTileset(tspath, nil, resource_manager)
+    resource_manager:add(tspath, tileset)
+    local tspath = 'data/tilesets/player.tsx.json'
     local tileset = tiledmap.TiledTileset(tspath, nil, resource_manager)
     resource_manager:add(tspath, tileset)
 
@@ -53,10 +63,6 @@ function love.load(args)
     --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
     love.graphics.setFont(m5x7)
 
-    local resource_manager = ResourceManager()
-    resource_manager:register_default_loaders()
-    resource_manager.locked = false  -- TODO make an api for this lol
-    game.resource_manager = resource_manager
     resource_manager:load('assets/sounds/jump.ogg')
 
     game.maps = {
@@ -74,7 +80,7 @@ function love.load(args)
     }
     -- TODO should maps instead hardcode their next maps?  or should they just
     -- have a generic "exit" a la doom?
-    game.map_index = 1
+    game.map_index = 7
     map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
     --map = tiledmap.TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene()

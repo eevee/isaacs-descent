@@ -2,7 +2,7 @@ local flux = require 'vendor.flux'
 local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
-local actors_misc = require 'klinklang.actors.misc'
+local actors_misc = require 'isaacsdescent.actors.misc'
 local Player = require 'klinklang.actors.player'
 local BaseScene = require 'klinklang.scenes.base'
 local whammo = require 'klinklang.whammo'

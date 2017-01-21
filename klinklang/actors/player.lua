@@ -6,6 +6,9 @@ local actors_misc = require 'klinklang.actors.misc'
 local util = require 'klinklang.util'
 local whammo_shapes = require 'klinklang.whammo.shapes'
 
+-- FIXME lol
+local actors_misc2 = require 'isaacsdescent.actors.misc'
+
 
 local Player = Class{
     __includes = actors_base.MobileActor,
@@ -42,7 +45,7 @@ function Player:init(...)
                 activator.ptrs.savepoint = nil
             end
 
-            local savepoint = actors_misc.Savepoint(
+            local savepoint = actors_misc2.Savepoint(
                 -- TODO this constant is /totally/ arbitrary, hmm
                 activator.pos + Vector(0, -16))
             worldscene:add_actor(savepoint)
