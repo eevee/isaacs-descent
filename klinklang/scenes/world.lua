@@ -21,8 +21,7 @@ local actors_lookup = {
     ['wooden wheel'] = actors_misc.WoodenWheel,
     ['tome of levitation'] = actors_misc.TomeOfLevitation,
 }
--- FIXME game-specific...  but maybe it doesn't need to be
-local TriggerZone = require 'neonphase.actors.trigger'
+local TriggerZone = require 'klinklang.actors.trigger'
 
 local WorldScene = Class{
     __includes = BaseScene,
