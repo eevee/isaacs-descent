@@ -257,6 +257,11 @@ local WireSocket = Wirable:extend{
     is_usable = true,
 }
 
+function WireSocket:blocks()
+    -- FIXME i'd like this to be blocking, but then you can't use it, because you use things you /overlap/
+    return false
+end
+
 function WireSocket:on_enter()
     local plug = WirePlugNE(self.pos)
     self.ptrs.plug = plug
