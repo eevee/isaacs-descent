@@ -13,7 +13,7 @@ local CAMERA_MARGIN = 0.4
 
 -- TODO yeah this sucks
 -- FIXME game-specific, but i need a subclass hook to fix it
-local actors_wire = require 'neonphase.actors.wire'
+local actors_wire = require 'klinklang.actors.wire'
 local actors_lookup = {
     spikes_up = actors_misc.SpikesUp,
     magical_bridge = actors_misc.MagicalBridge,

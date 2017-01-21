@@ -254,19 +254,7 @@ function WireSocket:on_enter()
 end
 
 function WireSocket:on_use(activator)
-    -- FIXME this is invasive; chip needs an api for taking a thing, and probably a little animation too
-    if activator.is_player and self.ptrs.plug and not activator.ptrs.chip.holding then
-        activator.ptrs.chip.holding = self.ptrs.plug
-        worldscene:remove_actor(self.ptrs.plug)
-        self.ptrs.plug = nil
-    elseif activator.is_player and not self.ptrs.plug and activator.ptrs.chip.holding then
-        -- FIXME only if holding a plug!
-        local plug = activator.ptrs.chip.holding
-        activator.ptrs.chip.holding = nil
-        plug.pos = self.pos:clone()
-        self.ptrs.plug = plug
-        worldscene:add_actor(plug)
-    end
+    -- TODO game-specific
 end
 
 
