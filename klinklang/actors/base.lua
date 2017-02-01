@@ -152,7 +152,7 @@ function Actor:draw()
     if self.sprite then
         local where = self.pos:clone()
         if self.is_floating then
-            where.y = where.y + math.sin(self.timer) * 4
+            where.y = where.y - (math.sin(self.timer) + 1) * 4
         end
         self.sprite:draw_at(where)
     end

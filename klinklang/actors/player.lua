@@ -81,6 +81,10 @@ end
 
 -- Decide to jump.
 function Player:decide_jump()
+    if self.is_floating then
+        return
+    end
+
     -- Jumping has three states:
     -- 2: starting to jump
     -- 1: continuing a jump
@@ -129,6 +133,10 @@ function Player:update(dt)
         end
         self.facing_left = true
         pose = 'walk'
+    end
+    if self.is_floating then
+        -- FIXME probably doesn't belong here, buut
+        pose = 'fall'
     end
 
     -- Jumping
