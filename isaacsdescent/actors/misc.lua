@@ -180,7 +180,7 @@ function Laser:update(dt)
         end)
     self.laser_length = impactdist
     self.laser_vector = self.laser_direction * impactdist
-    self:set_shape(whammo_shapes.Box(14, 0, 4, self.laser_length))
+    self:set_shape(whammo_shapes.Box(-2, 0, 4, self.laser_length))
 
     if math.random() < 0.1 then
         -- TODO should rotate this to face back along laser vector
@@ -274,7 +274,8 @@ function LaserEye:update(dt)
         self.is_awake = true
         self.sleep_timer = 4
         if not self.ptrs.laser then
-            local laser = Laser(self.pos + Vector(0, 12))
+            -- FIXME it would be nice to be able to specify extra custom anchors on a particular sprite?
+            local laser = Laser(self.pos + Vector(0, 28))
             self.ptrs.laser = laser
             worldscene:add_actor(laser)
         end
@@ -289,7 +290,7 @@ function LaserEye:update(dt)
         actors_base.MobileActor.update(self, dt)
         -- Keep the laser in lockstep with us
         if self.ptrs.laser then
-            self.ptrs.laser:move_to(self.pos + Vector(0, 12))
+            self.ptrs.laser:move_to(self.pos + Vector(0, 28))
         end
         -- If we hit something (which cuts our velocity), reverse direction
         if self.velocity:len2() < self.waking_velocity:len2() then
