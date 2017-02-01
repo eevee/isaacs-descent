@@ -46,9 +46,14 @@ function WorldScene:init(...)
     -- FIXME well, i guess, don't actually fix me, but, this is used to stash
     -- entire maps atm too
     self.stashed_submaps = {}
+
+    -- TODO probably need a more robust way of specifying music
+    self.music = love.audio.newSource('assets/music/square-one.ogg', 'stream')
+    self.music:setLooping(true)
 end
 
 function WorldScene:enter()
+    self.music:play()
     self:_refresh_canvas()
 end
 
@@ -494,7 +499,7 @@ end
 
 function WorldScene:load_map(map)
     self.map = map
-    self.music = nil
+    --self.music = nil  -- FIXME not sure when this should happen; isaac vs neon are very different
     self.fluct = flux.group()
     self.tick = tick.group()
 
