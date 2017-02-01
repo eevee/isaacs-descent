@@ -514,10 +514,14 @@ function WorldScene:load_map(map)
 
     self.actors = {}
     self.collider = whammo.Collider(4 * map.tilewidth)
+    -- FIXME this is useful sometimes (temporary hop to another map), but not
+    -- always (reloading the map for isaac); find a way to reconcile
+    --[[
     self.stashed_submaps[map] = {
         actors = self.actors,
         collider = self.collider,
     }
+    ]]
 
     -- TODO this seems clearly wrong, especially since i don't clear the
     -- collider, but it happens to work (i think)
