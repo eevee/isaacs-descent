@@ -7,9 +7,11 @@ local ResourceManager = require 'klinklang.resources'
 local WorldScene = require 'klinklang.scenes.world'
 local SpriteSet = require 'klinklang.sprite'
 local tiledmap = require 'klinklang.tiledmap'
+local TitleScene = require 'isaacsdescent.scenes.title'
 
 
 game = {
+    VERSION = "0.1",
     TILE_SIZE = 32,
 
     progress = {
@@ -92,6 +94,7 @@ function love.load(args)
     m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
     --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
     love.graphics.setFont(m5x7)
+    m5x7small = love.graphics.newFont('assets/fonts/m5x7.ttf', 16)
 
     love.joystick.loadGamepadMappings("vendor/gamecontrollerdb.txt")
 
@@ -112,14 +115,15 @@ function love.load(args)
     }
     -- TODO should maps instead hardcode their next maps?  or should they just
     -- have a generic "exit" a la doom?
-    game.map_index = 7
-    map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
+    game.map_index = 1
+    --map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
     --map = tiledmap.TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene()
-    worldscene:load_map(map)
 
     Gamestate.registerEvents()
-    Gamestate.switch(worldscene)
+    --Gamestate.switch(worldscene)
+    Gamestate.switch(TitleScene(worldscene, "data/maps/" .. game.maps[game.map_index]))
+
     --local tmpscene = DialogueScene(worldscene)
     --Gamestate.switch(tmpscene)
 end
