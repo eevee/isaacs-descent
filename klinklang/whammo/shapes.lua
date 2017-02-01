@@ -1,31 +1,14 @@
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
-local util = require 'isaacsdescent.util'
+local Object = require 'klinklang.object'
+local util = require 'klinklang.util'
 
--- Smallest unit of distance, in pixels.  Movement is capped to a multiple of
--- this, and any surfaces closer than this distance are considered touching.
--- Should be exactly representable as a float (i.e., a power of two) else
--- you're kinda defeating the point.
-local QUANTUM = 1 / 8
 -- Allowed rounding error when comparing whether two shapes are overlapping.
 -- If they overlap by only this amount, they'll be considered touching.
 local PRECISION = 1e-8
 
-local function round_movement_to_quantum(v)
-    if v.x < 0 then
-        v.x = math.ceil(v.x / QUANTUM) * QUANTUM
-    else
-        v.x = math.floor(v.x / QUANTUM) * QUANTUM
-    end
-    if v.y < 0 then
-        v.y = math.ceil(v.y / QUANTUM) * QUANTUM
-    else
-        v.y = math.floor(v.y / QUANTUM) * QUANTUM
-    end
-end
 
-local Segment = Class{}
+local Segment = Object:extend()
 
 function Segment:init(x0, y0, x1, y1)
     self.x0 = x0
@@ -65,9 +48,10 @@ function Segment:move(dx, dy)
 end
 
 
-
-
-local Shape = Class{}
+local Shape = Object:extend{
+    xoff = 0,
+    yoff = 0,
+}
 
 function Shape:init()
     self.blockmaps = setmetatable({}, {__mode = 'k'})
@@ -108,11 +92,31 @@ function Shape:extended_bbox(dx, dy)
     return x0, y0, x1, y1
 end
 
--- An arbitrary (CONVEX) polygon
-local Polygon = Class{
-    __includes = Shape,
-}
+function Shape:flipx(axis)
+    error("flipx not implemented")
+end
 
+function Shape:move(dx, dy)
+    error("move not implemented")
+end
+
+function Shape:move_to(x, y)
+    self:move(x - self.xoff, y - self.yoff)
+end
+
+function Shape:draw(mode)
+    error("draw not implemented")
+end
+
+function Shape:normals()
+    error("normals not implemented")
+end
+
+
+-- An arbitrary (CONVEX) polygon
+local Polygon = Shape:extend()
+
+-- FIXME i think this blindly assumes clockwise order
 function Polygon:init(...)
     Shape.init(self)
     self.edges = {}
@@ -146,12 +150,23 @@ function Polygon:clone()
     return Polygon(unpack(self.coords))
 end
 
+function Polygon:flipx(axis)
+    local reverse_coords = {}
+    for n = #self.coords - 1, 1, -2 do
+        reverse_coords[#self.coords - n] = axis * 2 - self.coords[n]
+        reverse_coords[#self.coords - n + 1] = self.coords[n + 1]
+    end
+    return Polygon(unpack(self.coords))
+end
+
 function Polygon:_generate_normals()
     self._normals = {}
     for _, edge in ipairs(self.edges) do
         local normal = edge:normal()
-        -- What a mouthful
-        self._normals[normal] = normal:normalized()
+        if normal ~= Vector.zero then
+            -- What a mouthful
+            self._normals[normal] = normal:normalized()
+        end
     end
 end
 
@@ -160,6 +175,8 @@ function Polygon:bbox()
 end
 
 function Polygon:move(dx, dy)
+    self.xoff = self.xoff + dx
+    self.yoff = self.yoff + dy
     self.x0 = self.x0 + dx
     self.x1 = self.x1 + dx
     self.y0 = self.y0 + dy
@@ -172,11 +189,6 @@ function Polygon:move(dx, dy)
         edge:move(dx, dy)
     end
     self:update_blockmaps()
-end
-
-function Polygon:move_to(x, y)
-    -- TODO
-    error("TODO")
 end
 
 function Polygon:center()
@@ -226,6 +238,10 @@ function Polygon:slide_towards(other, movement)
     --    than lengths or normalized vectors, to avoid precision loss
     --    from taking square roots.
 
+    if other.subshapes then
+        return self:_multi_slide_towards(other, movement)
+    end
+
     -- Mapping of normal vectors (i.e. projection axes) to their normalized
     -- versions (needed for comparing the results of the projection)
     local movenormal = movement:perpendicular()
@@ -246,6 +262,7 @@ function Polygon:slide_towards(other, movement)
     -- TODO i would love to get rid of ClockRange, and it starts right here; i
     -- think at most we can return a span of two normals, if you hit a corner
     local clock = util.ClockRange()
+    local cant_collide = false
     --print("us:", self:bbox())
     --print("them:", other:bbox())
     for fullaxis, axis in pairs(axes) do
@@ -265,18 +282,26 @@ function Polygon:slide_towards(other, movement)
             -- Likewise, flip the axis so it points towards them
             fullaxis = -fullaxis
         end
-        -- Critically, don't round /up/ from a negative value of less than one
-        -- quantum, because that could make us ignore a non-trivial overlap.
-        -- round_to_quantum is only appropriate for the movement vector!
-        if -PRECISION < dist and dist < QUANTUM then
+        -- Ignore extremely tiny overlaps, which are likely precision errors
+        if math.abs(dist) < PRECISION then
             dist = 0
         end
         --print("    axis:", fullaxis, "dist:", dist, "sep:", sep)
         if dist >= 0 then
             -- The movement itself may be away from the other shape, in which
-            -- case we can stop here; we know they'll never collide
-            if fullaxis * movement <= 0 and dist > 0 then
-                return
+            -- case we can stop here; we know they'll never collide.
+            -- (The most common case here is that fullaxis is the move normal.)
+            if fullaxis * movement <= 0 then
+                if dist > 0 then
+                    return
+                else
+                    -- If dist is zero, then they might still /touch/, and we
+                    -- need to know about that for other reasons
+                    -- FIXME wait, do we?  where do i care about a perfect
+                    -- existing slide?  if i'm sliding along the ground then
+                    -- i'm not /on/ the ground...
+                    cant_collide = true
+                end
             end
 
             -- If the distance isn't negative, then it's possible to do a slide
@@ -293,22 +318,28 @@ function Polygon:slide_towards(other, movement)
 
     if maxdist < 0 then
         -- Shapes are already colliding
-        -- TODO should maybe...  return something more specific here?
+        -- FIXME should have /some/ kind of gentle rejection here
+        --print("ALREADY COLLIDING", maxdist, worldscene.collider:get_owner(other))
         --error("seem to be inside something!!  stopping so you can debug buddy  <3")
-        --print("ALREADY COLLIDING", worldscene.collider:get_owner(other))
         return Vector.zero, -1, util.ClockRange(util.ClockRange.ZERO, util.ClockRange.ZERO)
         --return
     end
 
     local gap = maxsep:projectOn(maxdir)
+    if math.abs(gap.x) < PRECISION then
+        gap.x = 0
+    end
+    if math.abs(gap.y) < PRECISION then
+        gap.y = 0
+    end
     local allowed = movement:projectOn(maxdir)
-    --print("  max dist:", maxdist, "in dir:", maxdir, "  gap:", gap, "allowed:", allowed)
-    -- If we're already moving in an allowed slide direction, then we can't
-    -- possibly collide
-    if clock:includes(movement) then
+    --print("  max dist:", maxdist, "in dir:", maxdir, "  gap:", gap, "allowed:", allowed, "clock:", clock)
+    if cant_collide then
         -- One question remains: will we actually touch?
         -- TODO i'm not totally confident in this logic; seems like near misses
         -- without touches might not be handled correctly...?
+        -- TODO do we actually care about this at all?  there's a use for "what
+        -- am i overlapping" but that could be done differently
         if gap:len2() <= allowed:len2() then
             -- This is a slide; we will touch (or are already touching) the
             -- other object, but can continue past it
@@ -320,27 +351,54 @@ function Polygon:slide_towards(other, movement)
     end
 
     local mv
-    if math.abs(allowed.x) > math.abs(allowed.y) then
+    if allowed == Vector.zero then
+        error("pretty sure this shouldn't be possible")
+        mv = Vector.zero:clone()
+    elseif math.abs(allowed.x) > math.abs(allowed.y) then
         mv = movement * gap.x / allowed.x
     else
         mv = movement * gap.y / allowed.y
     end
-    round_movement_to_quantum(mv)
     local move_len2 = mv:len2()
-    --if move_len2 < 0 or move_len2 > movement:len2() then
     if move_len2 > movement:len2() then
         -- Won't actually hit!
         return
     end
 
-    return mv, 1, clock
+    return mv, 1, clock, -maxdir
 end
+
+function Polygon:_multi_slide_towards(other, movement)
+    local move, touchtype, clock, movelen
+    for _, subshape in ipairs(other.subshapes) do
+        local move2, touchtype2, clock2 = self:slide_towards(subshape, movement)
+        if move2 == nil then
+            -- Do nothing
+        elseif move == nil then
+            -- First result; just accept it
+            move, touchtype, clock = move2, touchtype2, clock2
+            movelen = move:len2()
+        else
+            -- Need to combine
+            local movelen2 = move2:len2()
+            if movelen2 < movelen then
+                move, touchtype, clock = move2, touchtype2, clock2
+                movelen = movelen2
+            elseif movelen2 == movelen then
+                clock:intersect(clock2)
+                touchtype = math.min(touchtype, touchtype2)
+            end
+        end
+    end
+
+    return move, touchtype, clock
+end
+
 
 -- An AABB, i.e., an unrotated rectangle
 local _XAXIS = Vector(1, 0)
 local _YAXIS = Vector(0, 1)
-local Box = Class{
-    __includes = Polygon,
+local Box = Polygon:extend{
     -- Handily, an AABB only has two normals: the x and y axes
     _normals = { [_XAXIS] = _XAXIS, [_YAXIS] = _YAXIS },
 }
@@ -355,20 +413,102 @@ function Box:clone()
     return Box(self.x0, self.y0, self.width, self.height)
 end
 
-function Box:_generate_normals()
+function Box:flipx(axis)
+    return Box(axis * 2 - self.x0 - self.width, self.y0, self.width, self.height)
 end
 
-function Box:move_to(x, y)
-    self:move(x - self.x0, y - self.y0)
-    self:update_blockmaps()
+function Box:_generate_normals()
 end
 
 function Box:center()
     return self.x0 + self.width / 2, self.y0 + self.height / 2
 end
 
+
+local MultiShape = Shape:extend()
+
+function MultiShape:init(...)
+    MultiShape.__super.init(self)
+
+    self.subshapes = {}
+    for _, subshape in ipairs{...} do
+        self:add_subshape(subshape)
+    end
+end
+
+function MultiShape:add_subshape(subshape)
+    -- TODO what if subshape has an offset already?
+    table.insert(self.subshapes, subshape)
+    self:update_blockmaps()
+end
+
+function MultiShape:clone()
+    return MultiShape(unpack(self.subshapes))
+end
+
+function MultiShape:bbox()
+    local x0, x1 = math.huge, -math.huge
+    local y0, y1 = math.huge, -math.huge
+    for _, subshape in ipairs(self.subshapes) do
+        local subx0, suby0, subx1, suby1 = subshape:bbox()
+        x0 = math.min(x0, subx0)
+        y0 = math.min(y0, suby0)
+        x1 = math.max(x1, subx1)
+        y1 = math.max(y1, suby1)
+    end
+    return x0, y0, x1, y1
+end
+
+function MultiShape:move(dx, dy)
+    self.xoff = self.xoff + dx
+    self.yoff = self.yoff + dy
+    for _, subshape in ipairs(self.subshapes) do
+        subshape:move(dx, dy)
+    end
+end
+
+function MultiShape:draw(...)
+    for _, subshape in ipairs(self.subshapes) do
+        subshape:draw(...)
+    end
+end
+
+function MultiShape:normals()
+    local normals = {}
+    -- TODO maybe want to compute this only once
+    for _, subshape in ipairs(self.subshapes) do
+        for k, v in pairs(subshape:normals()) do
+            normals[k] = v
+        end
+    end
+    return normals
+end
+
+function MultiShape:project_onto_axis(...)
+    local min, max, minpt, maxpt
+    for i, subshape in ipairs(self.subshapes) do
+        if i == 1 then
+            min, max, minpt, maxpt = subshape:project_onto_axis(...)
+        else
+            local min2, max2, minpt2, maxpt2 = subshape:project_onto_axis(...)
+            if min2 < min then
+                min = min2
+                minpt = minpt2
+            end
+            if max2 > max then
+                max = max2
+                maxpt = maxpt2
+            end
+        end
+    end
+    return min, max, minpt, maxpt
+end
+
+
+
 return {
     Box = Box,
+    MultiShape = MultiShape,
     Polygon = Polygon,
     Segment = Segment,
 }

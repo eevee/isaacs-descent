@@ -30,6 +30,16 @@ Original source: https://github.com/rxi/flux
 
 License: MIT
 
+## tick
+
+Version 0.1.1
+
+Vendored on Jan 13, 2017
+
+Original source: https://github.com/rxi/flux
+
+License: MIT
+
 ## HUMP
 
 Commit 400c8ea7 from May 24, 2016
@@ -39,3 +49,13 @@ Vendored on Aug 30, 2016
 Original source: https://github.com/vrld/hump
 
 License: MIT
+
+## SDL_GameControllerDB
+
+Commit aad1132b from January 14, 2017
+
+Vendored on January 18, 2017
+
+Original source: https://github.com/gabomdq/SDL_GameControllerDB
+
+License: zlib

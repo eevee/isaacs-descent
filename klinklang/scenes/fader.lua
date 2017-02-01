@@ -1,12 +1,10 @@
-local Class = require 'vendor.hump.class'
 local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 local flux = require 'vendor.flux'
 
-local BaseScene = require 'isaacsdescent.scenes.base'
+local BaseScene = require 'klinklang.scenes.base'
 
-local SceneFader = Class{
-    __includes = BaseScene,
+local SceneFader = BaseScene:extend{
     __tostring = function(self) return "scenefader" end,
 
     wrapped = nil,
@@ -46,6 +44,9 @@ end
 
 function SceneFader:enter(from_scene)
     self.from_scene = from_scene
+    if from_scene.music then
+        self:fade_out_music(from_scene.music)
+    end
     self._fluct:to(self.color, self.time, {[4] = 255})
         :oncomplete(function()
             self.going = false
@@ -82,6 +83,19 @@ function SceneFader:draw()
     love.graphics.setColor(self.color)
     love.graphics.rectangle('fill', 0, 0, love.graphics.getDimensions())
     love.graphics.pop()
+end
+
+function SceneFader:fade_out_music(music)
+    -- FIXME a bit hokey; might be nice to be more explicit about how scenes
+    -- handle their music
+    local original = music:getVolume()
+    local volume = { value = original }
+    self._fluct:to(volume, self.time, { value = 0 })
+        :onupdate(function() music:setVolume(volume.value) end)
+        :oncomplete(function()
+            music:pause()
+            music:setVolume(original)
+        end)
 end
 
 return SceneFader

@@ -1,0 +1,104 @@
+{ "columns":8,
+ "image":"..\/..\/assets\/images\/dialogue.png",
+ "imageheight":96,
+ "imagewidth":512,
+ "margin":0,
+ "name":"dialogue",
+ "spacing":0,
+ "tilecount":8,
+ "tileheight":96,
+ "tileproperties":
+    {
+     "0":
+        {
+         "sprite name":"lexy_dialogue\/default"
+        },
+     "1":
+        {
+         "sprite name":"isaac_dialogue\/default"
+        },
+     "2":
+        {
+         "sprite name":"isaac_dialogue\/default\/talk"
+        },
+     "3":
+        {
+         "sprite name":"lexy_dialogue\/default\/talk"
+        },
+     "4":
+        {
+         "sprite name":"lexy_dialogue\/yeahsure\/talk"
+        },
+     "5":
+        {
+         "sprite name":"lexy_dialogue\/yeahsure"
+        }
+    },
+ "tilepropertytypes":
+    {
+     "0":
+        {
+         "sprite name":"string"
+        },
+     "1":
+        {
+         "sprite name":"string"
+        },
+     "2":
+        {
+         "sprite name":"string"
+        },
+     "3":
+        {
+         "sprite name":"string"
+        },
+     "4":
+        {
+         "sprite name":"string"
+        },
+     "5":
+        {
+         "sprite name":"string"
+        }
+    },
+ "tiles":
+    {
+     "2":
+        {
+         "animation":[
+                {
+                 "duration":250,
+                 "tileid":1
+                }, 
+                {
+                 "duration":250,
+                 "tileid":2
+                }]
+        },
+     "3":
+        {
+         "animation":[
+                {
+                 "duration":250,
+                 "tileid":0
+                }, 
+                {
+                 "duration":250,
+                 "tileid":3
+                }]
+        },
+     "4":
+        {
+         "animation":[
+                {
+                 "duration":250,
+                 "tileid":5
+                }, 
+                {
+                 "duration":250,
+                 "tileid":4
+                }]
+        }
+    },
+ "tilewidth":64
+}

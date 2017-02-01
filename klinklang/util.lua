@@ -1,8 +1,9 @@
 --[[
 Argh!  The dreaded util module.  You know what to expect.
 ]]
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
+
+local Object = require 'klinklang.object'
 
 --------------------------------------------------------------------------------
 -- Conspicuous mathematical omissions
@@ -28,7 +29,7 @@ local function clamp(n, min, max)
 end
 
 local function divmod(n, b)
-    return math.floor(n / b), math.mod(n, b)
+    return math.floor(n / b), n % b
 end
 
 
@@ -40,7 +41,7 @@ end
 -- everything is backwards.
 
 -- A range of angles, represented by pairs of vectors going clockwise
-local ClockRange = Class{
+local ClockRange = Object:extend{
     -- The zero angle
     ZERO = Vector(1, 0),
 }

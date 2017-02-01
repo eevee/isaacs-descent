@@ -1,22 +1,29 @@
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
-local actors_base = require 'isaacsdescent.actors.base'
-local actors_misc = require 'isaacsdescent.actors.misc'
-local util = require 'isaacsdescent.util'
-local whammo_shapes = require 'isaacsdescent.whammo.shapes'
+local actors_base = require 'klinklang.actors.base'
+local actors_misc = require 'klinklang.actors.misc'
+local Object = require 'klinklang.object'
+local util = require 'klinklang.util'
+local whammo_shapes = require 'klinklang.whammo.shapes'
+
+-- FIXME lol
+local actors_misc2 = require 'isaacsdescent.actors.misc'
 
 
-local Player = Class{
-    __includes = actors_base.MobileActor,
-
-    shape = whammo_shapes.Box(8, 16, 20, 46),
-    anchor = Vector(19, 62),
+local Player = actors_base.MobileActor:extend{
+    name = 'isaac',
     sprite_name = 'isaac',
+    dialogue_position = 'left',
+    dialogue_sprite_name = 'isaac portrait',
+    z = 1000,
 
     is_player = true,
 
     inventory_cursor = 1,
+
+    -- Conscious movement decisions
+    decision_walk = 0,
+    decision_jump_mode = 0,
 }
 
 function Player:init(...)
@@ -42,7 +49,7 @@ function Player:init(...)
                 activator.ptrs.savepoint = nil
             end
 
-            local savepoint = actors_misc.Savepoint(
+            local savepoint = actors_misc2.Savepoint(
                 -- TODO this constant is /totally/ arbitrary, hmm
                 activator.pos + Vector(0, -16))
             worldscene:add_actor(savepoint)
@@ -50,6 +57,39 @@ function Player:init(...)
         end,
     })
 
+end
+
+function Player:move_to(...)
+    Player.__super.move_to(self, ...)
+
+    -- Nuke the player's touched object after an external movement, since
+    -- chances are, we're not touching it any more
+    -- This is vaguely hacky, but it gets rid of the dang use prompt after
+    -- teleporting to the graveyard
+    self.touching_mechanism = nil
+end
+
+-- "Thinking" API
+-- Totally not sure about this yet, but it seems handy for critter AI.
+
+-- Decide to start walking in the given direction.  -1 for left, 1 for right,
+-- or 0 to stop walking.  Persists until changed.
+function Player:decide_walk(direction)
+    self.decision_walk = direction
+end
+
+-- Decide to jump.
+function Player:decide_jump()
+    -- Jumping has three states:
+    -- 2: starting to jump
+    -- 1: continuing a jump
+    -- 0: not jumping (i.e., falling)
+    self.decision_jump_mode = 2
+end
+
+-- Decide to abandon an ongoing jump, if any, which may reduce the jump height.
+function Player:decide_abandon_jump()
+    self.decision_jump_mode = 0
 end
 
 function Player:update(dt)
@@ -74,12 +114,18 @@ function Player:update(dt)
     -- Explicit movement
     -- TODO should be whichever was pressed last?
     local pose = 'stand'
-    if love.keyboard.isDown('right') then
-        self.velocity.x = self.velocity.x + self.xaccel * xmult * dt
+    if self.decision_walk > 0 then
+        -- FIXME hmm is this the right way to handle a maximum walking speed?
+        -- it obviously doesn't work correctly in another frame of reference
+        if self.velocity.x < self.max_speed then
+            self.velocity.x = math.min(self.max_speed, self.velocity.x + self.xaccel * xmult * dt)
+        end
         self.facing_left = false
         pose = 'walk'
-    elseif love.keyboard.isDown('left') then
-        self.velocity.x = self.velocity.x - self.xaccel * xmult * dt
+    elseif self.decision_walk < 0 then
+        if self.velocity.x > -self.max_speed then
+            self.velocity.x = math.max(-self.max_speed, self.velocity.x - self.xaccel * xmult * dt)
+        end
         self.facing_left = true
         pose = 'walk'
     end
@@ -88,15 +134,28 @@ function Player:update(dt)
     -- This uses the Sonic approach: pressing jump immediately sets (not
     -- increases!) the player's y velocity, and releasing jump lowers the y
     -- velocity to a threshold
-    if love.keyboard.isDown('space') then
+    if self.decision_jump_mode == 2 then
+        self.decision_jump_mode = 1
         if self.on_ground then
             if self.velocity.y > -self.jumpvel then
                 self.velocity.y = -self.jumpvel
                 self.on_ground = false
                 game.resource_manager:get('assets/sounds/jump.ogg'):play()
+                -- FIXME gravity is applied after this and before you actually
+                -- move, which means that if the framerate is too low, your
+                -- initial jump velocity will be cut so much that you can't
+                -- reach the maximum jump height.
+                -- currently this is worked around by slicing updates in the
+                -- world scene, which is probably a good idea anyway, but i
+                -- think my whole ordering of actions vs passive forces needs a
+                -- little tweaking.
+                -- btw, walking has the same kind of problem -- friction is
+                -- applied after the speed cap but before actual movement, so
+                -- at a very low framerate, you move very slowly.  a real fix
+                -- may need some comprehensive rearrangement of stuff
             end
         end
-    else
+    elseif self.decision_jump_mode == 0 then
         if not self.on_ground then
             self.velocity.y = math.max(self.velocity.y, -self.jumpvel * self.jumpcap)
         end
@@ -121,17 +180,14 @@ function Player:update(dt)
         pose = 'fall'
     end
     -- TODO how do these work for things that aren't players?
-    if self.facing_left then
-        pose = pose .. '/left'
-    else
-        pose = pose .. '/right'
-    end
+    self.sprite:set_facing_right(not self.facing_left)
     self.sprite:set_pose(pose)
 
     -- TODO ugh, this whole block should probably be elsewhere; i need a way to
     -- check current touches anyway.  would be nice if it could hook into the
     -- physics system so i don't have to ask twice
     local hits = self._stupid_hits_hack
+    -- FIXME this should really really be a ptr
     self.touching_mechanism = nil
     debug_hits = hits
     for shape in pairs(hits) do
@@ -178,18 +234,24 @@ function Player:draw()
     love.graphics.setColor(255, 255, 255)
 end
 
+function Player:damage(source, amount)
+    -- Apply a force that shoves the player away from the source
+    -- FIXME this should maybe be using the direction vector passed to
+    -- on_collide instead?  this doesn't take collision boxes into account
+    local offset = self.pos - source.pos
+    local force = Vector(256, -32)
+    if self.pos.x < source.pos.x then
+        force.x = -force.x
+    end
+    self.velocity = self.velocity + force
+end
+
 local Gamestate = require 'vendor.hump.gamestate'
-local DeadScene = require 'isaacsdescent.scenes.dead'
+local DeadScene = require 'klinklang.scenes.dead'
 -- TODO should other things also be able to die?
 function Player:die()
     if not self.is_dead then
         local pose = 'die'
-        -- TODO ARGGGHH
-        if self.facing_left then
-            pose = pose .. '/left'
-        else
-            pose = pose .. '/right'
-        end
         self.sprite:set_pose(pose)
         self.is_dead = true
         -- TODO LOL THIS WILL NOT FLY but the problem with putting a check in

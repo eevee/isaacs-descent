@@ -1,20 +1,41 @@
 local utf8 = require 'utf8'
 
-local Class = require 'vendor.hump.class'
 local Gamestate = require 'vendor.hump.gamestate'
-local Vector = require 'vendor.hump.vector'
+local tick = require 'vendor.tick'
 
-local ResourceManager = require 'isaacsdescent.resources'
-local WorldScene = require 'isaacsdescent.scenes.world'
-local Sprite = require 'isaacsdescent.sprite'
-local TiledMap = require 'isaacsdescent.tiledmap'
-
-local DialogueScene = require 'isaacsdescent.scenes.dialogue'
+local ResourceManager = require 'klinklang.resources'
+local WorldScene = require 'klinklang.scenes.world'
+local SpriteSet = require 'klinklang.sprite'
+local tiledmap = require 'klinklang.tiledmap'
 
 
 game = {
+    TILE_SIZE = 32,
+
+    progress = {
+        flags = {},
+    },
+
     debug = false,
-    sprites = {},
+    resource_manager = nil,
+    -- FIXME this seems ugly, but the alternative is to have sprite.lua implicitly depend here
+    sprites = SpriteSet._all_sprites,
+
+    scale = 1,
+
+    _determine_scale = function(self)
+        -- Default resolution is 640 × 360, which is half of 720p and a third
+        -- of 1080p and equal to 40 × 22.5 tiles.  With some padding, I get
+        -- these as the max viewport size.
+        local w, h = love.graphics.getDimensions()
+        local MAX_WIDTH = 50 * 16
+        local MAX_HEIGHT = 30 * 16
+        self.scale = math.ceil(math.max(w / MAX_WIDTH, h / MAX_HEIGHT))
+    end,
+
+    getDimensions = function(self)
+        return math.ceil(love.graphics.getWidth() / self.scale), math.ceil(love.graphics.getHeight() / self.scale)
+    end,
 }
 
 local TILE_SIZE = 32
@@ -32,80 +53,48 @@ function love.load(args)
 
     love.graphics.setDefaultFilter('nearest', 'nearest', 1)
 
-    -- Load all the graphics upfront
-    -- TODO i wouldn't mind having this defined in some json
-    local character_sheet = love.graphics.newImage('assets/images/isaac.png')
-    -- TODO istm i'll end up repeating this bit a lot
-    game.sprites.isaac = Sprite(character_sheet, TILE_SIZE, TILE_SIZE * 2, 0, 0)
-    game.sprites.isaac:add_pose('stand', {1, 1}, 0.05, 'pauseAtEnd')
-    game.sprites.isaac:add_pose('walk', {'2-9', 1}, 0.1)
-    game.sprites.isaac:add_pose('fall', {'10-11', 1}, 0.1)
-    game.sprites.isaac:add_pose('jump', {'12-13', 1}, 0.05, 'pauseAtEnd')
-    game.sprites.isaac:add_pose('die', {'14-18', 1}, 0.1, 'pauseAtEnd')
-
-    -- TODO list resources to load declaratively and actually populate them in this function?
-    p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
-    game.sprites.staff = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.staff:add_pose('default', {1, 4}, 1, 'pauseAtEnd')
-    game.sprites.spikes_up = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.spikes_up:add_pose('default', {9, 1}, 1, 'pauseAtEnd')
-    game.sprites.wooden_switch = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.wooden_switch:add_pose('default', {9, 4}, 1, 'pauseAtEnd')
-    game.sprites.wooden_switch:add_pose('switched', {10, 4}, 1, 'pauseAtEnd')
-    game.sprites.magical_bridge = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.magical_bridge:add_pose('default', {11, 3}, 1, 'pauseAtEnd')
-    game.sprites.savepoint = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.savepoint:add_pose(
-        'default', {'3-15', 2},
-        {
-            -- Initial appearance: 6 frames
-            0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
-            -- Default sprite
-            2.5,
-            -- Shimmer: 6 frames
-            0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
-        },
-        function(anim) anim:gotoFrame(7) end
-    )
-    game.sprites.laser_eye = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.laser_eye:add_pose('default', {11, 4}, 1, 'pauseAtEnd')
-    game.sprites.laser_eye:add_pose('awake', {12, 4}, 1, 'pauseAtEnd')
-    game.sprites.laser_vert = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.laser_vert:add_pose('default', {11, 5}, 1, 'pauseAtEnd')
-    game.sprites.laser_vert:add_pose('end', {12, 5}, 1, 'pauseAtEnd')
-    game.sprites.stone_door_shutter = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.stone_door_shutter:add_pose('default', {12, 3}, 1, 'pauseAtEnd')
-    game.sprites.stone_door_shutter:add_pose('active', {12, 3, 15, 3}, 0.1)
-    game.sprites.stone_door = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.stone_door:add_pose('default', {7, 3}, 1, 'pauseAtEnd')
-    game.sprites.stone_door:add_pose('end', {8, 3}, 1, 'pauseAtEnd')
-    game.sprites.wooden_wheel = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.wooden_wheel:add_pose('default', {15, 4}, 1, 'pauseAtEnd')
-    game.sprites.wooden_wheel:add_pose('turning', {'15-16', 4}, 0.1)
-    game.sprites.tome_of_levitation = Sprite(p8_spritesheet, TILE_SIZE, TILE_SIZE, 0, 0)
-    game.sprites.tome_of_levitation:add_pose('default', {3, 4}, 1, 'pauseAtEnd')
-
-    dialogue_spritesheet = love.graphics.newImage('assets/images/dialogue.png')
-    game.sprites.isaac_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
-    game.sprites.isaac_dialogue:add_pose('default', {2, 1}, 1, 'pauseAtEnd')
-    game.sprites.isaac_dialogue:add_pose('default/talk', {"2-3", 1}, 0.25)
-    game.sprites.lexy_dialogue = Sprite(dialogue_spritesheet, 64, 96, 0, 0)
-    game.sprites.lexy_dialogue:add_pose('default', {1, 1}, 1, 'pauseAtEnd')
-    game.sprites.lexy_dialogue:add_pose('default/talk', {1, 1, 4, 1}, 0.25)
-    game.sprites.lexy_dialogue:add_pose('yeahsure', {6, 1}, 1, 'pauseAtEnd')
-    game.sprites.lexy_dialogue:add_pose('yeahsure/talk', {6, 1, 5, 1}, 0.25)
-
-    dialogueboximg = love.graphics.newImage('assets/images/isaac-dialogue.png')
-    dialogueboximg2 = love.graphics.newImage('assets/images/lexy-dialogue.png')
-    local fontscale = 2
-    m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
-    --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
-    love.graphics.setFont(m5x7)
+    -- Eagerly load all actor modules, so we can access them by name
+    for _, package in ipairs{'klinklang', 'isaacsdescent'} do
+        local dir = package .. '/actors'
+        for _, filename in ipairs(love.filesystem.getDirectoryItems(dir)) do
+            -- FIXME this should recurse, but i can't be assed right now
+            if filename:match("%.lua$") and love.filesystem.isFile(dir .. '/' .. filename) then
+                module = package .. '.actors.' .. filename:sub(1, #filename - 4)
+                require(module)
+            end
+        end
+    end
 
     local resource_manager = ResourceManager()
     resource_manager:register_default_loaders()
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
+
+    -- Load all the graphics upfront
+    -- FIXME the savepoint sparkle is wrong, because i have no way to specify
+    -- where to loop back to
+    dialogueboximg = love.graphics.newImage('assets/images/isaac-dialogue.png')
+    dialogueboximg2 = love.graphics.newImage('assets/images/lexy-dialogue.png')
+    -- FIXME evict this global
+    p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
+
+    for _, tspath in ipairs{
+        'data/tilesets/pico8.tsx.json',
+        'data/tilesets/player.tsx.json',
+        'data/tilesets/portraits.tsx.json',
+    } do
+        local tileset = tiledmap.TiledTileset(tspath, nil, resource_manager)
+        resource_manager:add(tspath, tileset)
+    end
+
+    -- FIXME probably want a way to specify fonts with named roles
+    local fontscale = 2
+    m5x7 = love.graphics.newFont('assets/fonts/m5x7.ttf', 16 * fontscale)
+    --m5x7:setLineHeight(0.75)  -- TODO figure this out for sure
+    love.graphics.setFont(m5x7)
+
+    love.joystick.loadGamepadMappings("vendor/gamecontrollerdb.txt")
+
     resource_manager:load('assets/sounds/jump.ogg')
 
     game.maps = {
@@ -123,9 +112,9 @@ function love.load(args)
     }
     -- TODO should maps instead hardcode their next maps?  or should they just
     -- have a generic "exit" a la doom?
-    game.map_index = 1
-    map = TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
-    --map = TiledMap("data/maps/slopetest.tmx.json", resource_manager)
+    game.map_index = 7
+    map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
+    --map = tiledmap.TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene()
     worldscene:load_map(map)
 
@@ -135,6 +124,32 @@ function love.load(args)
     --Gamestate.switch(tmpscene)
 end
 
+function love.update(dt)
+    tick.update(dt)
+end
+
 function love.draw()
-    love.graphics.print(tostring(love.timer.getFPS( )), 10, 10)
+end
+
+local _previous_size
+
+function love.resize(w, h)
+    game:_determine_scale()
+end
+
+function love.keypressed(key, scancode, isrepeat)
+    if scancode == 'return' and not isrepeat and love.keyboard.isDown('lalt', 'ralt') then
+        if love.window.getFullscreen() then
+            love.window.setFullscreen(false)
+            -- FIXME this freezes X for me until i ssh in and killall love, so.
+            --love.window.setMode(_previous_size[1], _previous_size[2])
+            -- This isn't called for resizes caused by code, but worldscene
+            -- etc. sort of rely on knowing this
+            love.resize(love.graphics.getDimensions())
+        else
+            -- LOVE claims to do this for me, but it lies
+            _previous_size = {love.window.getMode()}
+            love.window.setFullscreen(true)
+        end
+    end
 end

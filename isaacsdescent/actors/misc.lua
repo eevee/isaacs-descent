@@ -1,8 +1,9 @@
-local Class = require 'vendor.hump.class'
 local Vector = require 'vendor.hump.vector'
 
-local actors_base = require 'isaacsdescent.actors.base'
-local whammo_shapes = require 'isaacsdescent.whammo.shapes'
+local Object = require 'klinklang.object'
+local actors_base = require 'klinklang.actors.base'
+local actors_misc = require 'klinklang.actors.misc'
+local whammo_shapes = require 'klinklang.whammo.shapes'
 
 -- TODO some overall questions about this setup:
 -- 1. where should anchors and collision boxes live?  here?  on the sprites?  can i cram that into tiled?
@@ -10,60 +11,10 @@ local whammo_shapes = require 'isaacsdescent.whammo.shapes'
 -- 3. do these actors use the sprites given on the map, or what?  do they also name their own sprites?  can those conflict?
 
 
--- TODO this doesn't do most things an actor does, which means it has no shape
--- or sprite, which means other code trying to interfere with it might not work
--- so good.  but it also means i have to write my own dummy on_spawn?
--- do i need a BaseActor or something?
-local Particle = Class{}
-
-function Particle:init(position, velocity, acceleration, color, ttl, fadeout)
-    self.pos = position
-    self.velocity = velocity
-    self.acceleration = acceleration
-    self.color = color
-    self.ttl = ttl
-    self.original_ttl = ttl
-    self.fadeout = fadeout
-end
-
-function Particle:on_spawn()
-end
-
-function Particle:update(dt)
-    self.velocity = self.velocity + self.acceleration * dt
-    self.pos = self.pos + self.velocity * dt
-
-    self.ttl = self.ttl - dt
-    if self.ttl < 0 then
-        worldscene:remove_actor(self)
-    end
-end
-
-function Particle:draw()
-    love.graphics.push('all')
-    if self.fadeout then
-        local r, g, b, a = unpack(self.color)
-        if a == nil then
-            a = 255
-        end
-        a = a * (self.ttl / self.original_ttl)
-        love.graphics.setColor(r, g, b, a)
-    else
-        love.graphics.setColor(unpack(self.color))
-    end
-    love.graphics.points(self.pos:unpack())
-    love.graphics.pop()
-end
-
-
-
 -- spikes
-local SpikesUp = Class{
-    __includes = actors_base.Actor,
-
+local SpikesUp = actors_base.Actor:extend{
+    name = 'spikes_up',
     sprite_name = 'spikes_up',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 24, 32, 8),
 }
 
 function SpikesUp:blocks(actor, d)
@@ -83,13 +34,9 @@ end
 
 
 -- wooden switch (platforms)
-local WoodenSwitch = Class{
-    __includes = actors_base.Actor,
-
+local WoodenSwitch = actors_base.Actor:extend{
+    name = 'wooden_switch',
     sprite_name = 'wooden_switch',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
-    -- TODO p8 has a "switched" pose
 
     -- TODO usesprite = declare_sprite{2},
 
@@ -104,7 +51,7 @@ end
 
 function WoodenSwitch:on_use(activator)
     -- TODO sfx(4)
-    self.sprite:set_pose('switched/right')
+    self.sprite:set_pose('switched')
     self.is_usable = false
 
     -- TODO probably wants a real API
@@ -119,12 +66,9 @@ end
 
 
 -- magical bridge, activated by wooden switch
-local MagicalBridge = Class{
-    __includes = actors_base.Actor,
-
+local MagicalBridge = actors_base.Actor:extend{
+    name = 'magical_bridge',
     sprite_name = 'magical_bridge',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 8),
 }
 
 function MagicalBridge:init(position)
@@ -174,20 +118,17 @@ function MagicalBridge:draw()
 end
 
 
-local Savepoint = Class{
-    __includes = actors_base.Actor,
-
+local Savepoint = actors_base.Actor:extend{
+    name = 'savepoint',
     sprite_name = 'savepoint',
-    anchor = Vector(16, 16),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
     -- TODO z?  should always be in background
 }
 
-function Savepoint:on_spawn()
+function Savepoint:on_enter()
     for i = 1, 8 do
         local angle = love.math.random() * 6.28
         local direction = Vector(math.cos(angle), math.sin(angle))
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + direction * 4,
             direction * 32 * love.math.random(0.75, 1),
             Vector(0, 1),
@@ -203,7 +144,7 @@ function Savepoint:update(dt)
     if love.math.random() < 0.0625 then
         local angle = love.math.random() * 6.28
         local direction = Vector(math.cos(angle), math.sin(angle))
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + direction * 8,
             direction * 16,
             Vector(0, 1),
@@ -214,13 +155,10 @@ function Savepoint:update(dt)
 end
 
 
-local Laser = Class{
-    __includes = actors_base.Actor,
-
+local Laser = actors_base.Actor:extend{
+    name = 'laser_vert',
     sprite_name = 'laser_vert',
     fullbright = true,
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(14, 0, 4, 32),
 
     laser_length = 0,
     laser_vector = Vector.zero,
@@ -251,7 +189,7 @@ function Laser:update(dt)
         if direction * self.laser_vector > 0 then
             direction = -direction
         end
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + self.laser_vector,
             direction * 64,
             Vector.zero,
@@ -288,12 +226,9 @@ end
 
 
 -- TODO this should probably have a cute canon name
-local LaserEye = Class{
-    __includes = actors_base.MobileActor,
-
+local LaserEye = actors_base.MobileActor:extend{
+    name = 'laser_eye',
     sprite_name = 'laser_eye',
-    anchor = Vector(16, 16),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     sensor_range = 64,
     sleep_timer = 0,
@@ -318,7 +253,7 @@ end
 function LaserEye:sleep()
     self.is_awake = false
     self.sleep_timer = 0
-    self.sprite:set_pose('default/right')
+    self.sprite:set_pose('default')
     if self.ptrs.laser then
         worldscene:remove_actor(self.ptrs.laser)
         self.ptrs.laser = nil
@@ -335,7 +270,7 @@ function LaserEye:update(dt)
         dist = sx0 - px1
     end
     if dist < self.sensor_range then
-        self.sprite:set_pose('awake/right')
+        self.sprite:set_pose('awake')
         self.is_awake = true
         self.sleep_timer = 4
         if not self.ptrs.laser then
@@ -369,19 +304,16 @@ function LaserEye:update(dt)
 end
 
 
-local StoneDoor = Class{
-    __includes = actors_base.Actor,
-
+local StoneDoor = actors_base.Actor:extend{
+    name = 'stone_door',
     sprite_name = 'stone_door',
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     door_height = 0,
     busy = false,
 }
 
 -- FIXME what happens if you stick a rune in an open doorway?
-function StoneDoor:on_spawn()
+function StoneDoor:on_enter()
     -- FIXME this "ray" should really have a /width/
     local impact, impactdist = worldscene.collider:fire_ray(
         self.pos,
@@ -394,7 +326,7 @@ function StoneDoor:on_spawn()
     if impactdist == math.huge then
         impactdist = 0
     end
-    self:set_shape(whammo_shapes.Box(0, 0, 32, impactdist))
+    self:set_shape(whammo_shapes.Box(-12, 0, 24, impactdist))
     self.door_height = impactdist
 end
 
@@ -406,7 +338,7 @@ function StoneDoor:update(dt)
 end
 
 function StoneDoor:draw()
-    local pt = self.pos - self.anchor
+    local pt = self.pos - self.sprite.anchor
     love.graphics.push('all')
     -- FIXME maybe worldscene needs a helper for this
     love.graphics.setScissor(pt.x - worldscene.camera.x, pt.y - worldscene.camera.y, 32, self.door_height)
@@ -416,9 +348,10 @@ function StoneDoor:draw()
     for y = top, bottom, 32 do
         local sprite = self.sprite.anim
         if y == bottom - 32 then
-            sprite = self.sprite.sprite.poses['end/right']
+            -- FIXME invasive...
+            sprite = self.sprite.spriteset.poses['end'].right.animation
         end
-        sprite:draw(self.sprite.sprite.image, pt.x, y)
+        sprite:draw(self.sprite.spriteset.image, pt.x, y)
     end
     love.graphics.pop()
     --pt = pt + Vector(0, 1) * self.door_height
@@ -443,30 +376,29 @@ function StoneDoor:open()
     local time = height / 30
     worldscene.fluct:to(self, time, { door_height = 32 })
         :ease('linear')
-        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
         :after(time, { door_height = height })
         :delay(4)
         :ease('linear')
-        :onupdate(function() self:set_shape(whammo_shapes.Box(0, 0, 32, self.door_height)) end)
+        :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
         :oncomplete(function() self.busy = false end)
 end
 
 
 -- TODO this should probably have a cute canon name
-local StoneDoorShutter = Class{
-    __includes = actors_base.Actor,
-
+local StoneDoorShutter = actors_base.Actor:extend{
+    name = 'stone door shutter',
     sprite_name = 'stone_door_shutter',
-    anchor = Vector(16, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 }
 
 function StoneDoorShutter:init(...)
     actors_base.Actor.init(self, ...)
 end
 
-function StoneDoorShutter:on_spawn()
-    local door = StoneDoor(self.pos + Vector(0, 32))
+function StoneDoorShutter:on_enter()
+    -- FIXME this number is kind of arbitrarily based on the arbitrary anchors
+    -- i gave both the shutter and the door, hmm
+    local door = StoneDoor(self.pos + Vector(0, 16))
     self.ptrs.door = door
     worldscene:add_actor(door)
 end
@@ -476,19 +408,16 @@ function StoneDoorShutter:blocks(actor, dir)
 end
 
 function StoneDoorShutter:on_activate()
-    self.sprite:set_pose('active/right')
+    self.sprite:set_pose('active')
     -- FIXME original code plays animation (and stays unusable) for one second
     self.ptrs.door:open()
 end
 
 
 -- wooden wheel (stone doors)
-local WoodenWheel = Class{
-    __includes = actors_base.Actor,
-
+local WoodenWheel = actors_base.Actor:extend{
+    name = 'wooden wheel',
     sprite_name = 'wooden_wheel',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
 
     is_usable = true,
 }
@@ -501,7 +430,7 @@ end
 
 function WoodenWheel:on_use(activator)
     -- TODO sfx(4)
-    self.sprite:set_pose('turning/right')
+    self.sprite:set_pose('turning')
     self.is_usable = false
 
     -- TODO probably wants a real API
@@ -515,17 +444,14 @@ function WoodenWheel:on_use(activator)
     end
 
     -- FIXME this should really use the tick library
-    worldscene.fluct:to(self, 1, {}):oncomplete(function() self.sprite:set_pose('default/right') self.is_usable = true end)
+    worldscene.fluct:to(self, 1, {}):oncomplete(function() self.sprite:set_pose('default') self.is_usable = true end)
 end
 
 
 -- inventory items
-local TomeOfLevitation = Class{
-    __includes = actors_base.Actor,
-
+local TomeOfLevitation = actors_base.Actor:extend{
+    name = 'tome of levitation',
     sprite_name = 'tome_of_levitation',
-    anchor = Vector(0, 0),
-    shape = whammo_shapes.Box(0, 0, 32, 32),
     is_floating = true,
 
     -- inventory
@@ -537,7 +463,7 @@ function TomeOfLevitation:update(dt)
     -- FIXME this is basically duplicated for isaac, but it's also not really
     -- an appropriate effect here i think?
     if math.random() < dt * 4 then
-        worldscene:add_actor(Particle(
+        worldscene:add_actor(actors_misc.Particle(
             self.pos + Vector(math.random() * 32, 32), Vector(0, -32), Vector(0, 0),
             {255, 255, 255}, 1.5, true))
     end
@@ -562,7 +488,6 @@ end
 
 
 return {
-    Particle = Particle,
     SpikesUp = SpikesUp,
     WoodenSwitch = WoodenSwitch,
     MagicalBridge = MagicalBridge,
