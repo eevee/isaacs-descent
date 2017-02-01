@@ -86,6 +86,7 @@ function DeadScene:keypressed(key, scancode, isrepeat)
         -- FIXME hardcoded color, as usual
         local player = self.wrapped.player
         if player.ptrs.savepoint then
+            game.resource_manager:get('assets/sounds/resurrect.ogg'):play()
             Gamestate.switch(SceneFader(
                 self.wrapped, true, 0.25, {140, 214, 18},
                 function()

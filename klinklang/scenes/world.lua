@@ -59,6 +59,10 @@ function WorldScene:enter()
 end
 
 function WorldScene:resume()
+    -- FIXME not sure if this belongs here?  need to stop persistent audio from
+    -- actors when reloading a map, though...  but also need to resume it when
+    -- returning to that map, fuck
+    love.audio.pause()
     -- Just in case, whenever we become the current scene, double-check the
     -- canvas size
     self:_refresh_canvas()
@@ -227,6 +231,13 @@ function WorldScene:update(dt)
             actor:update(subdt)
         end
     end
+
+    love.audio.setPosition(self.player.pos.x, self.player.pos.y, 0)
+    local fx = 1
+    if self.player.facing_left then
+        fx = -1
+    end
+    love.audio.setOrientation(fx, 0, 0, -1, 0, 0)
 
     self:update_camera()
 

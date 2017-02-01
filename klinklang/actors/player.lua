@@ -49,6 +49,7 @@ function Player:init(...)
                 activator.ptrs.savepoint = nil
             end
 
+            game.resource_manager:get('assets/sounds/staff.ogg'):play()
             local savepoint = actors_misc2.Savepoint(
                 -- TODO this constant is /totally/ arbitrary, hmm
                 activator.pos + Vector(0, -16))
@@ -251,6 +252,7 @@ local DeadScene = require 'klinklang.scenes.dead'
 -- TODO should other things also be able to die?
 function Player:die()
     if not self.is_dead then
+        game.resource_manager:get('assets/sounds/die.ogg'):play()
         local pose = 'die'
         self.sprite:set_pose(pose)
         self.is_dead = true

@@ -72,6 +72,16 @@ function love.load(args)
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
 
+    -- Eagerly load all sound effects, which we will surely be needing
+    local sounddir = 'assets/sounds'
+    for _, filename in ipairs(love.filesystem.getDirectoryItems(sounddir)) do
+        -- FIXME recurse?
+        local path = sounddir .. '/' .. filename
+        if love.filesystem.isFile(path) then
+            resource_manager:load(path)
+        end
+    end
+
     -- Load all the graphics upfront
     -- FIXME the savepoint sparkle is wrong, because i have no way to specify
     -- where to loop back to
@@ -97,8 +107,6 @@ function love.load(args)
     m5x7small = love.graphics.newFont('assets/fonts/m5x7.ttf', 16)
 
     love.joystick.loadGamepadMappings("vendor/gamecontrollerdb.txt")
-
-    resource_manager:load('assets/sounds/jump.ogg')
 
     game.maps = {
         'pico8-01.tmx.json',

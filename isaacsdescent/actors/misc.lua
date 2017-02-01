@@ -50,18 +50,21 @@ function WoodenSwitch:reset()
 end
 
 function WoodenSwitch:on_use(activator)
-    -- TODO sfx(4)
+    game.resource_manager:get('assets/sounds/lever.ogg'):play()
     self.sprite:set_pose('switched')
     self.is_usable = false
 
     -- TODO probably wants a real API
     -- TODO worldscene is a global...
-    for _, actor in ipairs(worldscene.actors) do
-        -- TODO would be nice if this could pick more specific targets, not just the entire map
-        if actor.on_activate_lever then
-            actor:on_activate_lever()
+    worldscene.tick:delay(function()
+        game.resource_manager:get('assets/sounds/platforms-appear.ogg'):play()
+        for _, actor in ipairs(worldscene.actors) do
+            -- TODO would be nice if this could pick more specific targets, not just the entire map
+            if actor.on_activate_lever then
+                actor:on_activate_lever()
+            end
         end
-    end
+    end, 0.5)
 end
 
 
@@ -84,6 +87,7 @@ end
 
 function MagicalBridge:reset()
     -- disabled by default
+    -- FIXME this is unused, and will break anyway
     -- TODO do i want this same global 'enabled' concept?  seems hokey
     self.enabled = false
     decoractor.reset(self)
@@ -93,22 +97,14 @@ function MagicalBridge:on_activate_lever()
     -- TODO should check for a blocker and refuse to materialize, or delay
     -- materializing?
     self.enabled = true
-    self.timer = 0.8
-end
-
-function MagicalBridge:update(dt)
-    -- TODO decoractor.update(self)
-    if self.enabled and self.timer > 0 then
-        -- TODO redo this with hump's tweens
-        self.timer = self.timer - dt
-    end
+    self.opacity = 0
+    worldscene.fluct:to(self, 0.5, { opacity = 1 })
 end
 
 function MagicalBridge:draw()
     if self.enabled then
-        if self.timer > 0 then
-            local alpha = (1 - self.timer / 0.8) * 255
-            love.graphics.setColor(255, 255, 255, alpha)
+        if self.opacity < 1 then
+            love.graphics.setColor(255, 255, 255, self.opacity * 255)
             self.sprite:draw_at(self.pos)
             love.graphics.setColor(255, 255, 255)
         else
@@ -164,6 +160,24 @@ local Laser = actors_base.Actor:extend{
     laser_vector = Vector.zero,
 }
 
+function Laser:init(...)
+    Laser.__super.init(self, ...)
+
+    self.sfx = game.resource_manager:get('assets/sounds/laser.ogg'):clone()
+    self.sfx:setLooping(true)
+    self.sfx:setAttenuationDistances(game.TILE_SIZE * 16, game.TILE_SIZE * 32)
+end
+
+function Laser:on_enter()
+    Laser.__super.on_enter(self)
+    self.sfx:play()
+end
+
+function Laser:on_leave()
+    Laser.__super.on_leave(self)
+    self.sfx:stop()
+end
+
 function Laser:update(dt)
     actors_base.Actor.update(self, dt)
 
@@ -181,6 +195,8 @@ function Laser:update(dt)
     self.laser_length = impactdist
     self.laser_vector = self.laser_direction * impactdist
     self:set_shape(whammo_shapes.Box(-2, 0, 4, self.laser_length))
+
+    self.sfx:setPosition(self.pos.x + self.laser_vector.x, self.pos.y + self.laser_vector.y, 0)
 
     if math.random() < 0.1 then
         -- TODO should rotate this to face back along laser vector
@@ -230,7 +246,7 @@ local LaserEye = actors_base.MobileActor:extend{
     name = 'laser_eye',
     sprite_name = 'laser_eye',
 
-    sensor_range = 64,
+    sensor_range = 32 * 4,
     sleep_timer = 0,
     is_awake = false,
 
@@ -430,7 +446,7 @@ function WoodenWheel:reset()
 end
 
 function WoodenWheel:on_use(activator)
-    -- TODO sfx(4)
+    game.resource_manager:get('assets/sounds/wheel.ogg'):play()
     self.sprite:set_pose('turning')
     self.is_usable = false
 
@@ -472,14 +488,17 @@ end
 
 function TomeOfLevitation:on_inventory_use(activator)
     if activator.is_floating then
+        game.resource_manager:get('assets/sounds/uncast.ogg'):play()
         activator.is_floating = false
     elseif activator.on_ground then
+        game.resource_manager:get('assets/sounds/cast.ogg'):play()
         activator.is_floating = true
     end
 end
 
 function TomeOfLevitation:on_collide(other, direction)
     if other.is_player then
+        game.resource_manager:get('assets/sounds/pickup.ogg'):play()
         table.insert(other.inventory, TomeOfLevitation)
         worldscene:remove_actor(self)
     end
