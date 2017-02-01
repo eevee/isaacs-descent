@@ -139,6 +139,8 @@ end
 
 function love.keypressed(key, scancode, isrepeat)
     if scancode == 'return' and not isrepeat and love.keyboard.isDown('lalt', 'ralt') then
+        -- FIXME disabled until i can figure out how to scale this larger game
+        do return end
         if love.window.getFullscreen() then
             love.window.setFullscreen(false)
             -- FIXME this freezes X for me until i ssh in and killall love, so.
