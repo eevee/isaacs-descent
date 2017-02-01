@@ -117,7 +117,7 @@ end
 local Savepoint = actors_base.Actor:extend{
     name = 'savepoint',
     sprite_name = 'savepoint',
-    -- TODO z?  should always be in background
+    z = -1000,
 }
 
 function Savepoint:on_enter()

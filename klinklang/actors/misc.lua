@@ -4,6 +4,7 @@ local actors_base = require 'klinklang.actors.base'
 
 local Particle = actors_base.BareActor:extend{
     name = 'particle',
+    z = 1000,
 }
 
 function Particle:init(position, velocity, acceleration, color, ttl, fadeout)
