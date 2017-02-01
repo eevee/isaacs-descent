@@ -7,6 +7,7 @@ local actors_base = require 'klinklang.actors.base'
 local Player = require 'klinklang.actors.player'
 local BaseScene = require 'klinklang.scenes.base'
 local PauseScene = require 'klinklang.scenes.pause'
+local SceneFader = require 'klinklang.scenes.fader'
 local whammo = require 'klinklang.whammo'
 
 local tiledmap = require 'klinklang.tiledmap'
@@ -180,15 +181,6 @@ function WorldScene:update(dt)
     self.fluct:update(dt)
     self.tick:update(dt)
 
-    -- TODO i can't tell if this belongs here.  probably not, since it /should/
-    -- do a fadeout.  maybe on the game object itself?
-    if self.player and self.player.__EXIT then
-        self.player.__EXIT = false
-        game.map_index = game.map_index + 1
-        local map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], game.resource_manager)
-        self:load_map(map)
-    end
-
     -- Update the music to match the player's current position
     local x, y = self.player.pos:unpack()
     local new_music = false
@@ -237,6 +229,17 @@ function WorldScene:update(dt)
     end
 
     self:update_camera()
+
+    -- TODO where does this belong, really?
+    -- FIXME also i hate this so much lol
+    if self.player and self.player.__EXIT then
+        self.player.__EXIT = false
+        game.map_index = game.map_index + 1
+        local map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], game.resource_manager)
+        Gamestate.push(SceneFader(self, true, 0.25, {0, 0, 0}, function()
+            self:load_map(map)
+        end))
+    end
 end
 
 function WorldScene:update_camera()
