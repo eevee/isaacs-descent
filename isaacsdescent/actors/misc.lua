@@ -58,8 +58,8 @@ function WoodenSwitch:on_use(activator)
     -- TODO worldscene is a global...
     for _, actor in ipairs(worldscene.actors) do
         -- TODO would be nice if this could pick more specific targets, not just the entire map
-        if actor.on_activate then
-            actor:on_activate()
+        if actor.on_activate_lever then
+            actor:on_activate_lever()
         end
     end
 end
@@ -89,7 +89,7 @@ function MagicalBridge:reset()
     decoractor.reset(self)
 end
 
-function MagicalBridge:on_activate()
+function MagicalBridge:on_activate_lever()
     -- TODO should check for a blocker and refuse to materialize, or delay
     -- materializing?
     self.enabled = true
@@ -408,7 +408,7 @@ function StoneDoorShutter:blocks(actor, dir)
     return true
 end
 
-function StoneDoorShutter:on_activate()
+function StoneDoorShutter:on_activate_wheel()
     self.sprite:set_pose('active')
     -- FIXME original code plays animation (and stays unusable) for one second
     self.ptrs.door:open()
@@ -439,8 +439,8 @@ function WoodenWheel:on_use(activator)
     -- FIXME oops, this will activate both doors /and/ bridges
     for _, actor in ipairs(worldscene.actors) do
         -- TODO would be nice if this could pick more specific targets, not just the entire map
-        if actor.on_activate then
-            actor:on_activate()
+        if actor.on_activate_wheel then
+            actor:on_activate_wheel()
         end
     end
 
