@@ -371,6 +371,7 @@ function WorldScene:draw()
 
     love.graphics.push('all')
 
+    -- FIXME put this and the debug stuff on a separate "layer" which doesn't have to live here
     love.graphics.draw(p8_spritesheet, love.graphics.newQuad(192, 128, 64, 64, p8_spritesheet:getDimensions()), 0, 0)
     love.graphics.setScissor(16, 16, love.graphics.getWidth(), 32)
     local name = love.graphics.newText(m5x7, self.player.inventory[self.player.inventory_cursor].display_name)
@@ -378,7 +379,8 @@ function WorldScene:draw()
     if self.inventory_switch then
         if self.inventory_switch.progress < 1 then
             dy = math.floor(self.inventory_switch.progress * 32)
-            game.sprites[self.inventory_switch.old_item.sprite_name]:instantiate():draw_at(Vector(16, 16 - dy))
+            local sprite = game.sprites[self.inventory_switch.old_item.sprite_name]:instantiate()
+            sprite:draw_at(Vector(16, 16 - dy) + sprite.anchor)
             love.graphics.draw(self.inventory_switch.new_name, 64, 32 - self.inventory_switch.new_name:getHeight() / 2 + 32 - dy)
         else
             love.graphics.setColor(255, 255, 255, (2 - self.inventory_switch.progress) * 255)
@@ -387,7 +389,8 @@ function WorldScene:draw()
         end
     end
 
-    game.sprites[self.player.inventory[self.player.inventory_cursor].sprite_name]:instantiate():draw_at(Vector(16, 16 + 32 - dy))
+    local sprite = game.sprites[self.player.inventory[self.player.inventory_cursor].sprite_name]:instantiate()
+    sprite:draw_at(Vector(16, 16 + 32 - dy) + sprite.anchor)
     --love.graphics.setColor(128, 0, 0)
     --love.graphics.rectangle('fill', 64, 32 - name:getHeight() / 2, name:getWidth(), name:getHeight())
     --love.graphics.setColor(255, 255, 255)
