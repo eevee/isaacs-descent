@@ -383,7 +383,7 @@ function StoneDoor:draw()
             -- FIXME invasive...
             sprite = self.sprite.spriteset.poses['end'].right.animation
         end
-        sprite:draw(self.sprite.spriteset.image, pt.x, y)
+        sprite:draw(self.sprite.spriteset.image, math.floor(pt.x), math.floor(y))
     end
     love.graphics.pop()
     --pt = pt + Vector(0, 1) * self.door_height
