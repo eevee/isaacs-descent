@@ -164,8 +164,9 @@ function Laser:init(...)
     Laser.__super.init(self, ...)
 
     self.sfx = game.resource_manager:get('assets/sounds/laser.ogg'):clone()
+    self.sfx:setVolume(0.75)
     self.sfx:setLooping(true)
-    self.sfx:setAttenuationDistances(game.TILE_SIZE * 16, game.TILE_SIZE * 32)
+    self.sfx:setAttenuationDistances(game.TILE_SIZE * 4, game.TILE_SIZE * 32)
 end
 
 function Laser:on_enter()
@@ -329,6 +330,16 @@ local StoneDoor = actors_base.Actor:extend{
     busy = false,
 }
 
+function StoneDoor:init(...)
+    StoneDoor.__super.init(self, ...)
+
+    self.sfx = game.resource_manager:get('assets/sounds/stonegrind.ogg'):clone()
+    self.sfx:setVolume(0.75)
+    self.sfx:setLooping(true)
+    self.sfx:setPosition(self.pos.x, self.pos.y, 0)
+    self.sfx:setAttenuationDistances(game.TILE_SIZE * 4, game.TILE_SIZE * 32)
+end
+
 -- FIXME what happens if you stick a rune in an open doorway?
 function StoneDoor:on_enter()
     -- FIXME this "ray" should really have a /width/
@@ -345,6 +356,10 @@ function StoneDoor:on_enter()
     end
     self:set_shape(whammo_shapes.Box(-12, 0, 24, impactdist))
     self.door_height = impactdist
+end
+
+function StoneDoor:on_leave()
+    self.sfx:stop()
 end
 
 function StoneDoor:blocks()
@@ -394,11 +409,15 @@ function StoneDoor:open()
     worldscene.fluct:to(self, time, { door_height = 32 })
         :ease('linear')
         :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
+        :onstart(function() self.sfx:play() end)
+        :oncomplete(function() self.sfx:stop() end)
         :after(time, { door_height = height })
         :delay(4)
         :ease('linear')
         :onupdate(function() self:set_shape(whammo_shapes.Box(-12, 0, 24, self.door_height)) end)
         :oncomplete(function() self.busy = false end)
+        :onstart(function() self.sfx:play() end)
+        :oncomplete(function() self.sfx:stop() end)
 end
 
 
