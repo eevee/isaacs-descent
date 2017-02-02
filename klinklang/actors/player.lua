@@ -270,7 +270,9 @@ function Player:die()
         -- switch to knife...
         -- TODO oh, it gets better: switch gamestate during an update means draw
         -- doesn't run this cycle, so you get a single black frame
-        Gamestate.push(DeadScene())
+        worldscene.tick:delay(function()
+            Gamestate.push(DeadScene())
+        end, 1.5)
     end
 end
 
