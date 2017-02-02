@@ -251,7 +251,7 @@ local LaserEye = actors_base.MobileActor:extend{
     sleep_timer = 0,
     is_awake = false,
 
-    is_floating = true,
+    gravity_multiplier = 0,
     -- We don't accelerate, so ignore friction as well
     friction = 0,
 }
