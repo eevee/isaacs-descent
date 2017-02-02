@@ -55,7 +55,7 @@ function DeadScene:draw()
     local line2 = love.graphics.newText(m5x7)
     line2:set{{255, 255, 255}, "press ", {52, 52, 52}, "R", {255, 255, 255}, " to restart"}
     local prefixlen = m5x7:getWidth("press ")
-    local keylen = m5x7:getWidth("r")
+    local keylen = m5x7:getWidth("R")
     local quad = love.graphics.newQuad(384, 0, 32, 32, p8_spritesheet:getDimensions())
     love.graphics.setColor(255, 255, 255)
     love.graphics.draw(p8_spritesheet, quad, (w - line2:getWidth()) / 2 + prefixlen + keylen / 2 - 32 / 2, h / 2 + line_height / 2 - 32 / 2)

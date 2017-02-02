@@ -9,6 +9,10 @@
  "tileheight":32,
  "tileproperties":
     {
+     "12":
+        {
+         "sprite name":"keycap\/default"
+        },
      "18":
         {
          "animation loops to":7,
@@ -88,6 +92,10 @@
     },
  "tilepropertytypes":
     {
+     "12":
+        {
+         "sprite name":"string"
+        },
      "18":
         {
          "animation loops to":"int",
