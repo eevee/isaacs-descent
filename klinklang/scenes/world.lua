@@ -395,11 +395,19 @@ function WorldScene:draw()
     love.graphics.pop()
 
     love.graphics.push('all')
-    game.sprites['keycap']:instantiate():draw_at(Vector(40, 40))
+    local sprite = game.sprites['keycap']:instantiate()
+    sprite:draw_at(Vector(36, 40))
     love.graphics.setColor(0, 0, 0)
     local keylen = m5x7:getWidth("E")
     local line_height = m5x7:getHeight()
-    love.graphics.print("E", 40 + (32 - keylen) / 2, 40 + (32 - line_height) / 2)
+    love.graphics.print("E", 36 + (32 - keylen) / 2, 40 + (32 - line_height) / 2)
+    if #self.player.inventory > 1 then
+        love.graphics.setColor(255, 255, 255)
+        sprite:draw_at(Vector(0, 40))
+        local keylen = m5x7:getWidth("Q")
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.print("Q", 0 + (32 - keylen) / 2, 40 + (32 - line_height) / 2)
+    end
     love.graphics.pop()
 end
 
