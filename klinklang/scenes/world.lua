@@ -59,10 +59,6 @@ function WorldScene:enter()
 end
 
 function WorldScene:resume()
-    -- FIXME not sure if this belongs here?  need to stop persistent audio from
-    -- actors when reloading a map, though...  but also need to resume it when
-    -- returning to that map, fuck
-    love.audio.pause()
     -- Just in case, whenever we become the current scene, double-check the
     -- canvas size
     self:_refresh_canvas()
@@ -515,6 +511,22 @@ end
 -- API
 
 function WorldScene:load_map(map)
+    -- Unload previous map; this allows actors to clean up global resources,
+    -- such as ambient sounds.
+    -- TODO i'm not sure this is the right thing to do; it would be wrong for
+    -- NEON PHASE, for example, since there we stash a map to go back to it
+    -- later!  i'm also not sure it should apply to the player?  but i only
+    -- need it in the first place to stop the laser sound.  wow audio is hard
+    if self.actors then
+        for i = #self.actors, 1, -1 do
+            local actor = self.actors[i]
+            self.actors[i] = nil
+            if actor then
+                actor:on_leave()
+            end
+        end
+    end
+
     self.map = map
     --self.music = nil  -- FIXME not sure when this should happen; isaac vs neon are very different
     self.fluct = flux.group()

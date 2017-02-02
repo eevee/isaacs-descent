@@ -44,7 +44,7 @@ end
 
 function SceneFader:enter(from_scene)
     self.from_scene = from_scene
-    if from_scene.music then
+    if from_scene.music and from_scene ~= self.to_scene then
         self:fade_out_music(from_scene.music)
     end
     self._fluct:to(self.color, self.time, {[4] = 255})
@@ -96,6 +96,14 @@ function SceneFader:fade_out_music(music)
             music:pause()
             music:setVolume(original)
         end)
+end
+
+function SceneFader:fade_audio(initial, goal)
+    -- FIXME a bit hokey; might be nice to be more explicit about how scenes
+    -- handle their music
+    local volume = { value = initial }
+    self._fluct:to(volume, self.time, { value = goal })
+        :onupdate(function() love.audio.setVolume(volume.value) end)
 end
 
 return SceneFader
