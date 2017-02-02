@@ -545,9 +545,10 @@ end
 
 
 function WorldScene:mousepressed(x, y, button, istouch)
-    if game.debug and button == 3 then
-        self.player.pos.x = x / game.scale + self.camera.x
-        self.player.pos.y = y / game.scale + self.camera.y
+    if game.debug and button == 2 then
+        self.player:move_to(Vector(
+            x / game.scale + self.camera.x,
+            y / game.scale + self.camera.y))
     end
 end
 
