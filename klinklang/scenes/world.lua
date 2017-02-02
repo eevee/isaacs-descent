@@ -475,6 +475,9 @@ function WorldScene:keypressed(key, scancode, isrepeat)
             }
         end
     elseif scancode == 'e' then
+        if self.player.is_dead then
+            return
+        end
         -- Use inventory item, or nearby thing
         -- FIXME this should be separate keys maybe?
         if self.player.touching_mechanism then
