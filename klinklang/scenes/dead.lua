@@ -1,6 +1,5 @@
 local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
-local flux = require 'vendor.flux'
 
 local BaseScene = require 'klinklang.scenes.base'
 local SceneFader = require 'klinklang.scenes.fader'
@@ -23,7 +22,6 @@ function DeadScene:enter(previous_scene)
 end
 
 function DeadScene:update(dt)
-    flux.update(dt)
     self.wrapped:update(dt)
 end
 
@@ -48,9 +46,9 @@ function DeadScene:draw()
     local line_height = m5x7:getHeight()
     local line1 = love.graphics.newText(m5x7, "you died")
     love.graphics.setColor(0, 0, 0)
-    love.graphics.draw(line1, (w - line1:getWidth()) / 2, h / 2 - line_height + 1)
+    love.graphics.draw(line1, (w - line1:getWidth()) / 2, h / 2 - line_height * 1.5 + 1)
     love.graphics.setColor(255, 255, 255)
-    love.graphics.draw(line1, (w - line1:getWidth()) / 2, h / 2 - line_height)
+    love.graphics.draw(line1, (w - line1:getWidth()) / 2, h / 2 - line_height * 1.5)
 
     local line2 = love.graphics.newText(m5x7)
     line2:set{{255, 255, 255}, "press ", {52, 52, 52}, "R", {255, 255, 255}, " to restart"}
@@ -58,8 +56,17 @@ function DeadScene:draw()
     local keylen = m5x7:getWidth("R")
     local quad = love.graphics.newQuad(384, 0, 32, 32, p8_spritesheet:getDimensions())
     love.graphics.setColor(255, 255, 255)
-    love.graphics.draw(p8_spritesheet, quad, (w - line2:getWidth()) / 2 + prefixlen + keylen / 2 - 32 / 2, h / 2 + line_height / 2 - 32 / 2)
-    love.graphics.draw(line2, (w - line2:getWidth()) / 2, h / 2)
+    love.graphics.draw(p8_spritesheet, quad, (w - line2:getWidth()) / 2 + prefixlen + keylen / 2 - 32 / 2, h / 2 - 32 / 2)
+    love.graphics.draw(line2, (w - line2:getWidth()) / 2, h / 2 - line_height / 2)
+
+    if worldscene.player.ptrs.savepoint then
+        line2:set{{255, 255, 255}, "press ", {52, 52, 52}, "E", {255, 255, 255}, " to resurrect"}
+        local keylen = m5x7:getWidth("E")
+        local quad = love.graphics.newQuad(384, 0, 32, 32, p8_spritesheet:getDimensions())
+        love.graphics.setColor(255, 255, 255)
+        love.graphics.draw(p8_spritesheet, quad, (w - line2:getWidth()) / 2 + prefixlen + keylen / 2 - 32 / 2, h / 2 + line_height - 32 / 2)
+        love.graphics.draw(line2, (w - line2:getWidth()) / 2, h / 2 + line_height / 2)
+    end
 
     love.graphics.pop()
 end
