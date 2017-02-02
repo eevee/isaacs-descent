@@ -409,6 +409,11 @@ function WorldScene:draw()
         love.graphics.print("Q", 0 + (32 - keylen) / 2, 40 + (32 - line_height) / 2)
     end
     love.graphics.pop()
+
+
+    if self.reset_event then
+        love.graphics.printf("keep holding R to reset the room", 0, love.graphics.getHeight() - m5x7:getHeight() * 1.5, love.graphics.getWidth(), "center")
+    end
 end
 
 function WorldScene:_draw_actors(actors)
@@ -500,9 +505,30 @@ function WorldScene:keypressed(key, scancode, isrepeat)
         elseif self.player.inventory_cursor > 0 then
             self.player.inventory[self.player.inventory_cursor]:on_inventory_use(self.player)
         end
+    elseif scancode == 'r' then
+        local reset_timer = { value = 3 }
+        self.reset_event = self.fluct:to(reset_timer, 3, { value = 0 })
+            :oncomplete(function()
+                self.reset_event = nil
+                Gamestate.push(SceneFader(
+                    self, true, 0.5, {0, 0, 0},
+                    function()
+                        self:reload_map()
+                    end
+                ))
+            end)
     elseif scancode == 'pause' then
         -- FIXME ignore if modifiers?
         Gamestate.push(PauseScene())
+    end
+end
+
+function WorldScene:keyreleased(key, scancode)
+    if scancode == 'r' then
+        if self.reset_event then
+            self.reset_event:stop()
+            self.reset_event = nil
+        end
     end
 end
 
