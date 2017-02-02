@@ -49,6 +49,11 @@
          "actor":"tome of levitation",
          "sprite name":"tome_of_levitation\/default"
         },
+     "53":
+        {
+         "actor":"flurry",
+         "sprite name":"flurry\/default"
+        },
      "56":
         {
          "actor":"wooden_switch",
@@ -128,6 +133,11 @@
          "sprite name":"string"
         },
      "50":
+        {
+         "actor":"string",
+         "sprite name":"string"
+        },
+     "53":
         {
          "actor":"string",
          "sprite name":"string"
@@ -757,6 +767,33 @@
                      "width":25,
                      "x":4,
                      "y":2
+                    }],
+             "opacity":1,
+             "type":"objectgroup",
+             "visible":true,
+             "width":0,
+             "x":0,
+             "y":0
+            }
+        },
+     "53":
+        {
+         "objectgroup":
+            {
+             "draworder":"index",
+             "height":0,
+             "name":"",
+             "objects":[
+                    {
+                     "height":32,
+                     "id":1,
+                     "name":"",
+                     "rotation":0,
+                     "type":"",
+                     "visible":true,
+                     "width":32,
+                     "x":0,
+                     "y":0
                     }],
              "opacity":1,
              "type":"objectgroup",

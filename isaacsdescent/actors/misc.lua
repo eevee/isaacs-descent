@@ -1,9 +1,12 @@
+local Gamestate = require 'vendor.hump.gamestate'
 local Vector = require 'vendor.hump.vector'
 
 local Object = require 'klinklang.object'
 local actors_base = require 'klinklang.actors.base'
 local actors_misc = require 'klinklang.actors.misc'
 local whammo_shapes = require 'klinklang.whammo.shapes'
+local SceneFader = require 'klinklang.scenes.fader'
+local CreditsScene = require 'isaacsdescent.scenes.credits'
 
 -- TODO some overall questions about this setup:
 -- 1. where should anchors and collision boxes live?  here?  on the sprites?  can i cram that into tiled?
@@ -521,6 +524,22 @@ function TomeOfLevitation:on_collide(other, direction)
         table.insert(other.inventory, TomeOfLevitation)
         worldscene:remove_actor(self)
     end
+end
+
+
+local Flurry = actors_base.Actor:extend{
+    name = 'flurry',
+    sprite_name = 'flurry',
+    is_floating = true,
+}
+
+function Flurry:on_collide(other, direction)
+    worldscene:remove_actor(self)
+    worldscene.music:stop()
+    game.resource_manager:get('assets/sounds/win.ogg'):play()
+    worldscene.tick:delay(function()
+        Gamestate.switch(SceneFader(CreditsScene(), false, 2, {0, 0, 0}))
+    end, 2)
 end
 
 
