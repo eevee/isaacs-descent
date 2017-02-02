@@ -11,6 +11,7 @@
     {
      "18":
         {
+         "animation loops to":7,
          "sprite name":"savepoint\/default"
         },
      "38":
@@ -89,6 +90,7 @@
     {
      "18":
         {
+         "animation loops to":"int",
          "sprite name":"string"
         },
      "38":
@@ -223,55 +225,55 @@
         {
          "animation":[
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":18
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":19
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":20
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":21
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":22
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":23
                 }, 
                 {
-                 "duration":100,
+                 "duration":2000,
                  "tileid":24
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":25
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":26
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":27
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":28
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":29
                 }, 
                 {
-                 "duration":100,
+                 "duration":50,
                  "tileid":30
                 }],
          "objectgroup":

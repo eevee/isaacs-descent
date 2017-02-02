@@ -137,6 +137,9 @@ function TiledTileset:init(path, data, resource_manager)
                 end
                 if data.tileproperties[id]['animation stops'] then
                     onloop = 'pauseAtEnd'
+                elseif data.tileproperties[id]['animation loops to'] then
+                    local f = data.tileproperties[id]['animation loops to']
+                    onloop = function(anim) anim:gotoFrame(f) end
                 end
                 if data.tileproperties[id]['animation flipped'] then
                     flipped = true
