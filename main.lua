@@ -90,13 +90,14 @@ function love.load(args)
     -- FIXME evict this global
     p8_spritesheet = love.graphics.newImage('assets/images/spritesheet.png')
 
-    for _, tspath in ipairs{
-        'data/tilesets/pico8.tsx.json',
-        'data/tilesets/player.tsx.json',
-        'data/tilesets/portraits.tsx.json',
-    } do
-        local tileset = tiledmap.TiledTileset(tspath, nil, resource_manager)
-        resource_manager:add(tspath, tileset)
+    local tilesetdir = 'data/tilesets'
+    for _, filename in ipairs(love.filesystem.getDirectoryItems(tilesetdir)) do
+        -- FIXME recurse?
+        local path = tilesetdir .. '/' .. filename
+        if love.filesystem.isFile(path) then
+            local tileset = tiledmap.TiledTileset(path, nil, resource_manager)
+            resource_manager:add(path, tileset)
+        end
     end
 
     -- FIXME probably want a way to specify fonts with named roles
