@@ -70,23 +70,20 @@ function Player:move_to(...)
     self.touching_mechanism = nil
 end
 
+function Player:on_collide_with(collision)
+    local actor = worldscene.collider:get_owner(collision.shape)
+    if actor and actor.is_usable then
+        -- FIXME this should really really be a ptr
+        self.touching_mechanism = actor
+    end
+
+    return Player.__super.on_collide_with(self, collision)
+end
+
 function Player:update(dt)
     -- Run the base logic to perform movement, collision, sprite updating, etc.
-    Player.__super.update(self, dt)
-
-    -- TODO ugh, this whole block should probably be elsewhere; i need a way to
-    -- check current touches anyway.  would be nice if it could hook into the
-    -- physics system so i don't have to ask twice
-    local hits = self._stupid_hits_hack
-    -- FIXME this should really really be a ptr
     self.touching_mechanism = nil
-    for shape in pairs(hits) do
-        local actor = worldscene.collider:get_owner(shape)
-        if actor and actor.is_usable then
-            self.touching_mechanism = actor
-            break
-        end
-    end
+    Player.__super.update(self, dt)
 
     -- TODO this is stupid but i want a real exit door anyway
     -- TODO also it should fire an event or something
