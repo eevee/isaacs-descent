@@ -75,6 +75,9 @@ function love.load(args)
 
     local resource_manager = ResourceManager()
     resource_manager:register_default_loaders()
+    resource_manager:register_loader('tmx.json', function(path)
+        return tiledmap.TiledMap(path, resource_manager)
+    end)
     resource_manager.locked = false  -- TODO make an api for this lol
     game.resource_manager = resource_manager
 
@@ -131,8 +134,9 @@ function love.load(args)
     -- TODO should maps instead hardcode their next maps?  or should they just
     -- have a generic "exit" a la doom?
     game.map_index = 1
-    --map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
-    --map = tiledmap.TiledMap("data/maps/slopetest.tmx.json", resource_manager)
+    --local map = tiledmap.TiledMap("data/maps/" .. game.maps[game.map_index], resource_manager)
+    local map = resource_manager:load("data/maps/" .. game.maps[game.map_index])
+    --local map = tiledmap.TiledMap("data/maps/slopetest.tmx.json", resource_manager)
     worldscene = WorldScene()
 
     Gamestate.registerEvents()
