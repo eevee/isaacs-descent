@@ -70,13 +70,13 @@ function Player:move_to(...)
     self.touching_mechanism = nil
 end
 
-function Player:on_collide_with(actor, collision)
+function Player:on_collide_with(actor, ...)
     if actor and actor.is_usable then
         -- FIXME this should really really be a ptr
         self.touching_mechanism = actor
     end
 
-    return Player.__super.on_collide_with(self, actor, collision)
+    return Player.__super.on_collide_with(self, actor, ...)
 end
 
 function Player:update(dt)
