@@ -30,8 +30,7 @@ function TitleScene:update(dt)
     if self.load_state == 1 then
         -- Only start to load the map AFTER we've drawn at least one frame, so
         -- the player isn't staring at a blank screen
-        local tiledmap = require('klinklang.tiledmap')
-        local map = tiledmap.TiledMap(self.map_path, game.resource_manager)
+        local map = game.resource_manager:load(self.map_path)
         self.next_scene:load_map(map)
         self.load_state = 2
     end

@@ -24,14 +24,10 @@ function SpikesUp:blocks(actor, d)
     return false
 end
 
-function SpikesUp:on_collide(other, direction)
-    -- FIXME this gets the /full/ direction, not just the collision direction,
-    -- so it doesn't work for "am i landing on the spikes" -- i could come in
-    -- down-diagonally on one side, or i could be falling past without
-    -- colliding
-    if other.is_player and direction.y > 0 then
+function SpikesUp:on_collide(actor, movement, collision)
+    if actor.is_player and collision.touchtype >= 0 and actors_base.any_normal_faces(collision, Vector(0, -1)) then
         -- TODO i feel that damage should be dealt in a more roundabout way?
-        other:die()
+        actor:die()
     end
 end
 
