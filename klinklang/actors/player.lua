@@ -115,24 +115,6 @@ function Player:update(dt)
     end
 end
 
-function Player:draw()
-    actors_base.MobileActor.draw(self)
-
-    do return end
-    if self.touching_mechanism then
-        love.graphics.setColor(0, 64, 255, 128)
-        self.touching_mechanism.shape:draw('fill')
-        love.graphics.setColor(255, 255, 255)
-    end
-    if self.on_ground then
-        love.graphics.setColor(255, 0, 0, 128)
-    else
-        love.graphics.setColor(0, 192, 0, 128)
-    end
-    self.shape:draw('fill')
-    love.graphics.setColor(255, 255, 255)
-end
-
 function Player:damage(source, amount)
     -- Apply a force that shoves the player away from the source
     -- FIXME this should maybe be using the direction vector passed to
