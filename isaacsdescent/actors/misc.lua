@@ -508,9 +508,11 @@ function TomeOfLevitation:on_inventory_use(activator)
     if activator.is_floating then
         game.resource_manager:get('assets/sounds/uncast.ogg'):play()
         activator.is_floating = false
+        activator.gravity_multiplier = 1
     elseif activator.on_ground then
         game.resource_manager:get('assets/sounds/cast.ogg'):play()
         activator.is_floating = true
+        activator.gravity_multiplier = 0
     end
 end
 
