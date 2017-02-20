@@ -533,9 +533,6 @@ function WorldScene:keypressed(key, scancode, isrepeat)
                     end
                 ))
             end)
-    elseif scancode == 'pause' then
-        -- FIXME ignore if modifiers?
-        Gamestate.push(PauseScene())
     end
 end
 
