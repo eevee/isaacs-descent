@@ -1,5 +1,6 @@
 local utf8 = require 'utf8'
 
+local baton = require 'vendor.baton'
 local Gamestate = require 'vendor.hump.gamestate'
 local tick = require 'vendor.tick'
 
@@ -16,6 +17,8 @@ local TitleScene = require 'isaacsdescent.scenes.title'
 game = {
     VERSION = "0.1",
     TILE_SIZE = 32,
+
+    input = nil,
 
     progress = {
         flags = {},
@@ -105,6 +108,25 @@ function love.load(args)
 
     love.joystick.loadGamepadMappings("vendor/gamecontrollerdb.txt")
 
+    -- FIXME things i would like to have here:
+    -- - cleverly scale axis inputs like that other thing, and limit them to a circular range as well?
+    -- - use scancodes by default!!!  the examples use keys
+    -- - get the most appropriate control for an input (first matching current device type)
+    -- - mutually exclusive controls
+    -- - distinguish between edge-flip and receiving an actual event
+    -- - aliases or something?  so i can say "accept" means "use", or even "either use or jump"
+    -- - take repeats into account?
+    game.input = baton.new{
+        left = {'key:left', 'axis:leftx-', 'button:dpleft'},
+        right = {'key:right', 'axis:leftx+', 'button:dpright'},
+        up = {'key:up', 'axis:lefty-', 'button:dpup'},
+        down = {'key:down', 'axis:lefty+', 'button:dpdown'},
+        jump = {'key:space', 'button:a'},
+        use = {'sc:e', 'button:x'},
+
+        accept = {'sc:e', 'sc:space', 'button:a'},
+    }
+
     game.maps = {
         'pico8-01.tmx.json',
         'pico8-02.tmx.json',
@@ -136,6 +158,7 @@ end
 
 function love.update(dt)
     tick.update(dt)
+    game.input:update(dt)
 end
 
 function love.draw()
@@ -172,4 +195,11 @@ function love.keypressed(key, scancode, isrepeat)
             Gamestate.push(game.debug_scene)
         end
     end
+end
+
+function love.gamepadpressed(joystick, button)
+    -- Tell baton to use whatever joystick was last used
+    -- TODO until i can figure out a reliable way to pick a joystick, that
+    -- doesn't end up grabbing my dang tablet
+    game.input.joystick = joystick
 end
